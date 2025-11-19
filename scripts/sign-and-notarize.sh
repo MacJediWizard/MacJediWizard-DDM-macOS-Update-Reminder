@@ -22,10 +22,20 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PRODUCT_NAME="DDMmacOSUpdateReminder"
 
 # Configuration - UPDATE THESE VALUES
-DEVELOPER_ID="Developer ID Application: Your Name (TEAM_ID)"
-NOTARYTOOL_PROFILE="notarytool-profile"
+DEVELOPER_ID="${DEVELOPER_ID:-Developer ID Application: Your Name (TEAM_ID)}"
+NOTARYTOOL_PROFILE="${NOTARYTOOL_PROFILE:-notarytool-profile}"
 
 cd "$PROJECT_ROOT"
+
+# Check for placeholder values
+if [[ "$DEVELOPER_ID" == *"Your Name"* ]]; then
+    echo "ERROR: Please update DEVELOPER_ID in this script with your certificate name"
+    echo "       or set the DEVELOPER_ID environment variable."
+    echo ""
+    echo "To find your certificate name:"
+    echo "  security find-identity -v -p codesigning"
+    exit 1
+fi
 
 echo "============================================"
 echo "DDMmacOSUpdateReminder Sign & Notarize"

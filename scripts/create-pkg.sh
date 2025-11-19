@@ -22,10 +22,20 @@ VERSION="1.0.0"
 IDENTIFIER="com.macjediwizard.ddmmacosupdatereminder"
 
 # Configuration - UPDATE THESE VALUES
-INSTALLER_CERT="Developer ID Installer: Your Name (TEAM_ID)"
-NOTARYTOOL_PROFILE="notarytool-profile"
+INSTALLER_CERT="${INSTALLER_CERT:-Developer ID Installer: Your Name (TEAM_ID)}"
+NOTARYTOOL_PROFILE="${NOTARYTOOL_PROFILE:-notarytool-profile}"
 
 cd "$PROJECT_ROOT"
+
+# Check for placeholder values
+if [[ "$INSTALLER_CERT" == *"Your Name"* ]]; then
+    echo "ERROR: Please update INSTALLER_CERT in this script with your certificate name"
+    echo "       or set the INSTALLER_CERT environment variable."
+    echo ""
+    echo "To find your certificate name:"
+    echo "  security find-identity -v -p codesigning"
+    exit 1
+fi
 
 BINARY_PATH=".build/universal/$PRODUCT_NAME"
 PKG_ROOT=".build/pkg-root"
