@@ -41,10 +41,14 @@ class DialogController {
         Logger.shared.dialog("Preparing to show reminder dialog")
 
         // Check swiftDialog exists
-        guard FileManager.default.fileExists(atPath: dialogBinary) else {
+        if !FileManager.default.fileExists(atPath: dialogBinary) {
             if configuration.advancedSettings.swiftDialogAutoInstall {
                 if !installSwiftDialog() {
                     return .error("swiftDialog not installed and auto-install failed")
+                }
+                // Verify installation succeeded
+                guard FileManager.default.fileExists(atPath: dialogBinary) else {
+                    return .error("swiftDialog installation completed but binary not found")
                 }
             } else {
                 return .error("swiftDialog not found at \(dialogBinary)")

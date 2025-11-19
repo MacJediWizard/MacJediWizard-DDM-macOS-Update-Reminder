@@ -220,7 +220,7 @@
 
     "BrandingSettings": {
       "title": "Branding Settings",
-      "description": "Customize visual appearance",
+      "description": "Customize visual appearance of the dialog window",
       "type": "object",
       "properties": {
         "OverlayIconURL": {
@@ -245,6 +245,121 @@
             "26": "https://ics.services.jamfcloud.com/icon/hash_7320c100c9ca155dc388e143dbc05620907e2d17d6bf74a8fb6d6278ece2c2b4",
             "default": "https://ics.services.jamfcloud.com/icon/hash_4555d9dc8fecb4e2678faffa8bdcf43cba110e81950e07a4ce3695ec2d5579ee"
           }
+        },
+        "IconSize": {
+          "title": "Icon Size",
+          "description": "Size of the main icon in pixels",
+          "type": "integer",
+          "default": 250,
+          "minimum": 64,
+          "maximum": 500
+        },
+        "WindowWidth": {
+          "title": "Window Width",
+          "description": "Width of the dialog window in pixels",
+          "type": "integer",
+          "default": 800,
+          "minimum": 400,
+          "maximum": 1200
+        },
+        "WindowHeight": {
+          "title": "Window Height",
+          "description": "Height of the dialog window in pixels",
+          "type": "integer",
+          "default": 600,
+          "minimum": 300,
+          "maximum": 900
+        },
+        "WindowPosition": {
+          "title": "Window Position",
+          "description": "Position of the dialog window on screen",
+          "type": "string",
+          "enum": ["center", "topleft", "topright", "bottomleft", "bottomright"],
+          "default": "center"
+        },
+        "BannerImageURL": {
+          "title": "Banner Image URL",
+          "description": "URL to banner image displayed at top of dialog",
+          "type": "string",
+          "default": ""
+        },
+        "BannerImagePath": {
+          "title": "Banner Image Local Path",
+          "description": "Local path to banner image if not using URL",
+          "type": "string",
+          "default": ""
+        },
+        "BannerTitle": {
+          "title": "Banner Title",
+          "description": "Title text displayed over the banner image",
+          "type": "string",
+          "default": ""
+        },
+        "TitleFontName": {
+          "title": "Title Font Name",
+          "description": "Font name for dialog title (e.g., 'SF Pro Display')",
+          "type": "string",
+          "default": ""
+        },
+        "TitleFontSize": {
+          "title": "Title Font Size",
+          "description": "Font size for dialog title (0 = use default)",
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 72
+        },
+        "TitleFontColor": {
+          "title": "Title Font Color",
+          "description": "Color for title text (hex code, e.g., '#FF0000' or color name)",
+          "type": "string",
+          "default": ""
+        },
+        "MessageFontName": {
+          "title": "Message Font Name",
+          "description": "Font name for message text",
+          "type": "string",
+          "default": ""
+        },
+        "MessageFontSize": {
+          "title": "Message Font Size",
+          "description": "Font size for message text",
+          "type": "integer",
+          "default": 14,
+          "minimum": 8,
+          "maximum": 36
+        },
+        "MessageFontColor": {
+          "title": "Message Font Color",
+          "description": "Color for message text (hex code or color name)",
+          "type": "string",
+          "default": ""
+        },
+        "Button1Color": {
+          "title": "Primary Button Color",
+          "description": "Color for primary action button (hex code or color name)",
+          "type": "string",
+          "default": ""
+        },
+        "Button2Color": {
+          "title": "Secondary Button Color",
+          "description": "Color for secondary/defer button (hex code or color name)",
+          "type": "string",
+          "default": ""
+        },
+        "InfoboxFontSize": {
+          "title": "Infobox Font Size",
+          "description": "Font size for the information sidebar",
+          "type": "integer",
+          "default": 12,
+          "minimum": 8,
+          "maximum": 24
+        },
+        "ProgressBarColor": {
+          "title": "Progress Bar Color",
+          "description": "Color for any progress indicators (hex code or color name)",
+          "type": "string",
+          "default": ""
         }
       }
     },
