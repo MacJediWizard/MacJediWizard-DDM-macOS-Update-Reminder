@@ -6,16 +6,8 @@
 # Preference domain - adjust if using custom domain
 PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
 
-# Get management directory from config, default if not set
-MGMT_DIR=$(defaults read "${PREF_DOMAIN}" OrganizationSettings 2>/dev/null | grep ManagementDirectory | awk -F'"' '{print $2}')
-MGMT_DIR="${MGMT_DIR:-/Library/Management}"
-
-# Get reverse domain from config
-REV_DOMAIN=$(defaults read "${PREF_DOMAIN}" OrganizationSettings 2>/dev/null | grep ReverseDomainName | awk -F'"' '{print $2}')
-REV_DOMAIN="${REV_DOMAIN:-com.yourorg}"
-
-# Health state file path
-HEALTH_FILE="${MGMT_DIR}/${REV_DOMAIN}/ddm-health.plist"
+# Health state file path (in /Library/Application Support/{preferenceDomain}/)
+HEALTH_FILE="/Library/Application Support/${PREF_DOMAIN}/health.plist"
 
 # Check if health file exists
 if [[ ! -f "${HEALTH_FILE}" ]]; then

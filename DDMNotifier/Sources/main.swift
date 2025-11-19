@@ -68,7 +68,8 @@ func main() {
     }
 
     // Security: Validate preference domain format (reverse domain notation)
-    let domainPattern = "^[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)+$"
+    // Allows alphanumeric, hyphens, and dots (e.g., com.your-org.app)
+    let domainPattern = "^[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+$"
     guard domain.range(of: domainPattern, options: .regularExpression) != nil else {
         Logger.shared.error("Invalid preference domain format. Must be reverse domain notation (e.g., com.example.app)")
         exit(1)
@@ -137,15 +138,19 @@ class DDMUpdateReminderApp {
         }
 
         // Load configuration
-        guard loadConfiguration() else {
-            return 1
+        let configLoaded = loadConfiguration()
+
+        // Initialize health reporter (after config attempt, so we can report config errors)
+        if let config = configuration {
+            healthReporter = HealthReporter(
+                preferenceDomain: preferenceDomain,
+                configuration: config
+            )
         }
 
-        // Initialize health reporter
-        healthReporter = HealthReporter(
-            preferenceDomain: preferenceDomain,
-            configuration: configuration!
-        )
+        guard configLoaded else {
+            return 1
+        }
 
         // Setup mode - create/update LaunchDaemon and exit
         if setupMode {
@@ -322,36 +327,71 @@ class DDMUpdateReminderApp {
         case .openSoftwareUpdate:
             Logger.shared.userAction("User clicked: Open Software Update")
             openSoftwareUpdate()
-            healthReporter?.updateHealthState(status: .success, userAction: "Opened Software Update")
+            healthReporter?.updateHealthState(
+                status: .success,
+                enforcement: enforcement,
+                deferralManager: deferralManager,
+                userAction: "Opened Software Update"
+            )
 
         case .deferred:
             Logger.shared.userAction("User clicked: Remind Me Later")
             deferralManager.recordDeferral()
-            healthReporter?.updateHealthState(status: .success, userAction: "Deferred")
+            healthReporter?.updateHealthState(
+                status: .success,
+                enforcement: enforcement,
+                deferralManager: deferralManager,
+                userAction: "Deferred"
+            )
 
         case .snoozed:
             Logger.shared.userAction("User clicked: Snooze")
             deferralManager.recordSnooze()
-            healthReporter?.updateHealthState(status: .success, userAction: "Snoozed")
+            healthReporter?.updateHealthState(
+                status: .success,
+                enforcement: enforcement,
+                deferralManager: deferralManager,
+                userAction: "Snoozed"
+            )
 
         case .info:
             Logger.shared.userAction("User clicked: Info/Help")
-            healthReporter?.updateHealthState(status: .success, userAction: "Viewed help")
+            healthReporter?.updateHealthState(
+                status: .success,
+                enforcement: enforcement,
+                deferralManager: deferralManager,
+                userAction: "Viewed help"
+            )
 
         case .timeout:
             // Timeout acts as snooze when snooze is enabled
             if config.deferralSettings.snoozeEnabled {
                 Logger.shared.userAction("Dialog timed out - treating as snooze")
                 deferralManager.recordSnooze()
-                healthReporter?.updateHealthState(status: .success, userAction: "Snoozed (timeout)")
+                healthReporter?.updateHealthState(
+                    status: .success,
+                    enforcement: enforcement,
+                    deferralManager: deferralManager,
+                    userAction: "Snoozed (timeout)"
+                )
             } else {
                 Logger.shared.userAction("Dialog timed out")
-                healthReporter?.updateHealthState(status: .success, userAction: "Timeout")
+                healthReporter?.updateHealthState(
+                    status: .success,
+                    enforcement: enforcement,
+                    deferralManager: deferralManager,
+                    userAction: "Timeout"
+                )
             }
 
         case .error(let message):
             Logger.shared.error("Dialog error: \(message)")
-            healthReporter?.updateHealthState(status: .dialogError, error: message)
+            healthReporter?.updateHealthState(
+                status: .dialogError,
+                enforcement: enforcement,
+                deferralManager: deferralManager,
+                error: message
+            )
             return 1
         }
 
@@ -461,13 +501,15 @@ class DDMUpdateReminderApp {
         let now = Date()
         let hour = calendar.component(.hour, from: now)
         let minute = calendar.component(.minute, from: now)
+        let currentMinutes = hour * 60 + minute
 
-        // Check if we're at a scheduled time
+        // Check if we're within 5 minutes of a scheduled time
         for time in config.scheduleSettings.launchDaemonTimes {
-            if hour == time.hour && minute == time.minute {
+            let scheduledMinutes = time.hour * 60 + time.minute
+            if abs(currentMinutes - scheduledMinutes) <= 5 {
                 let maxDelay = config.behaviorSettings.randomDelayMaxSeconds
                 let delay = Int.random(in: 0...maxDelay)
-                Logger.shared.info("Applying random delay: \(delay) seconds")
+                Logger.shared.info("Applying random delay: \(delay) seconds (near scheduled time \(time.hour):\(String(format: "%02d", time.minute)))")
                 sleep(UInt32(delay))
                 return
             }
