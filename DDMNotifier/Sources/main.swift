@@ -282,13 +282,17 @@ class DDMUpdateReminderApp {
         }
 
         // Check display assertions (meetings/presentations)
-        if daysRemaining > config.behaviorSettings.ignoreAssertionsWithinHours / 24 {
-            if hasActiveDisplayAssertions() {
-                Logger.shared.info("Display assertion active - user may be in meeting")
-                // TODO: Implement meeting delay loop
-                healthReporter?.updateHealthState(status: .success, userAction: "Meeting detected")
+        let hoursUntilDeadline = daysRemaining * 24
+        if hoursUntilDeadline > config.behaviorSettings.ignoreAssertionsWithinHours {
+            let meetingWaitResult = waitForMeetingToEnd(config: config)
+            if !meetingWaitResult {
+                // Meeting still active after max wait time
+                Logger.shared.info("Meeting still active after maximum wait - exiting")
+                healthReporter?.updateHealthState(status: .success, userAction: "Meeting timeout - will retry later")
                 return 0
             }
+        } else {
+            Logger.shared.info("Within \(config.behaviorSettings.ignoreAssertionsWithinHours) hours of deadline - ignoring display assertions")
         }
 
         // Apply random delay (if at scheduled time)
@@ -398,6 +402,41 @@ class DDMUpdateReminderApp {
         } catch {
             return false
         }
+    }
+
+    private func waitForMeetingToEnd(config: Configuration) -> Bool {
+        // Check if there's an active display assertion
+        if !hasActiveDisplayAssertions() {
+            return true  // No meeting, proceed
+        }
+
+        Logger.shared.info("Display assertion detected - user may be in meeting/presentation")
+
+        let maxWaitMinutes = config.behaviorSettings.meetingDelayMinutes
+        let checkIntervalSeconds = config.behaviorSettings.meetingCheckIntervalSeconds
+        let maxWaitSeconds = maxWaitMinutes * 60
+        var totalWaitedSeconds = 0
+
+        Logger.shared.info("Waiting up to \(maxWaitMinutes) minutes for meeting to end (checking every \(checkIntervalSeconds) seconds)")
+
+        while totalWaitedSeconds < maxWaitSeconds {
+            // Wait for the check interval
+            Thread.sleep(forTimeInterval: Double(checkIntervalSeconds))
+            totalWaitedSeconds += checkIntervalSeconds
+
+            // Check again
+            if !hasActiveDisplayAssertions() {
+                Logger.shared.info("Display assertion cleared after \(totalWaitedSeconds / 60) minutes - proceeding")
+                return true  // Meeting ended, proceed
+            }
+
+            let remainingMinutes = (maxWaitSeconds - totalWaitedSeconds) / 60
+            Logger.shared.info("Display assertion still active - \(remainingMinutes) minutes remaining before timeout")
+        }
+
+        // Max wait time exceeded
+        Logger.shared.info("Maximum wait time (\(maxWaitMinutes) minutes) exceeded - meeting still active")
+        return false  // Meeting still active after max wait
     }
 
     private func applyRandomDelay(config: Configuration) {

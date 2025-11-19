@@ -55,6 +55,31 @@ class DialogController {
             }
         }
 
+        // Check swiftDialog version
+        let installedVersion = getSwiftDialogVersion()
+        let minVersion = configuration.advancedSettings.swiftDialogMinVersion
+
+        if !installedVersion.isEmpty && !isVersionSufficient(installed: installedVersion, minimum: minVersion) {
+            Logger.shared.dialog("swiftDialog version \(installedVersion) is below minimum \(minVersion)")
+
+            if configuration.advancedSettings.swiftDialogAutoInstall {
+                Logger.shared.dialog("Attempting to update swiftDialog...")
+                if !installSwiftDialog() {
+                    return .error("swiftDialog update failed - version \(installedVersion) below minimum \(minVersion)")
+                }
+                // Verify update succeeded
+                let newVersion = getSwiftDialogVersion()
+                if !isVersionSufficient(installed: newVersion, minimum: minVersion) {
+                    return .error("swiftDialog still below minimum version after update: \(newVersion)")
+                }
+                Logger.shared.dialog("swiftDialog updated to version \(newVersion)")
+            } else {
+                return .error("swiftDialog version \(installedVersion) below minimum \(minVersion)")
+            }
+        } else if !installedVersion.isEmpty {
+            Logger.shared.dialog("swiftDialog version \(installedVersion) meets minimum \(minVersion)")
+        }
+
         // Build dialog arguments
         let arguments = buildDialogArguments()
 
@@ -413,6 +438,36 @@ class DialogController {
 
     private func getInstalledVersion() -> String {
         return runCommand("/usr/bin/sw_vers", arguments: ["-productVersion"])
+    }
+
+    private func getSwiftDialogVersion() -> String {
+        let output = runCommand(dialogBinary, arguments: ["--version"])
+        // swiftDialog returns version like "2.4.0"
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func isVersionSufficient(installed: String, minimum: String) -> Bool {
+        let installedParts = installed.split(separator: ".").compactMap { Int($0) }
+        let minimumParts = minimum.split(separator: ".").compactMap { Int($0) }
+
+        // Pad arrays to same length
+        let maxLength = max(installedParts.count, minimumParts.count)
+        var installed = installedParts
+        var minimum = minimumParts
+
+        while installed.count < maxLength { installed.append(0) }
+        while minimum.count < maxLength { minimum.append(0) }
+
+        // Compare each component
+        for i in 0..<maxLength {
+            if installed[i] > minimum[i] {
+                return true
+            } else if installed[i] < minimum[i] {
+                return false
+            }
+        }
+
+        return true  // Versions are equal
     }
 
     private func runCommand(_ path: String, arguments: [String]) -> String {
