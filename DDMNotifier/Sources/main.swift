@@ -67,6 +67,13 @@ func main() {
         exit(1)
     }
 
+    // Security: Validate preference domain format (reverse domain notation)
+    let domainPattern = "^[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)+$"
+    guard domain.range(of: domainPattern, options: .regularExpression) != nil else {
+        Logger.shared.error("Invalid preference domain format. Must be reverse domain notation (e.g., com.example.app)")
+        exit(1)
+    }
+
     // Initialize logger with the preference domain as subsystem
     Logger.shared.configure(subsystem: domain)
 
@@ -274,6 +281,9 @@ class DDMUpdateReminderApp {
             configuration: config
         )
 
+        // Check if deadline changed and reset deferrals if configured
+        deferralManager.checkDeadlineChanged(currentDeadline: enforcement.deadline)
+
         // Check for active snooze
         if deferralManager.isSnoozeActive() {
             Logger.shared.info("Snooze is active - skipping reminder")
@@ -329,8 +339,15 @@ class DDMUpdateReminderApp {
             healthReporter?.updateHealthState(status: .success, userAction: "Viewed help")
 
         case .timeout:
-            Logger.shared.userAction("Dialog timed out")
-            healthReporter?.updateHealthState(status: .success, userAction: "Timeout")
+            // Timeout acts as snooze when snooze is enabled
+            if config.deferralSettings.snoozeEnabled {
+                Logger.shared.userAction("Dialog timed out - treating as snooze")
+                deferralManager.recordSnooze()
+                healthReporter?.updateHealthState(status: .success, userAction: "Snoozed (timeout)")
+            } else {
+                Logger.shared.userAction("Dialog timed out")
+                healthReporter?.updateHealthState(status: .success, userAction: "Timeout")
+            }
 
         case .error(let message):
             Logger.shared.error("Dialog error: \(message)")
@@ -456,10 +473,12 @@ class DDMUpdateReminderApp {
             }
         }
 
-        // Login delay
-        let delay = Int.random(in: 30...90)
-        Logger.shared.info("Applying login delay: \(delay) seconds")
-        sleep(UInt32(delay))
+        // Login delay (when not at a scheduled time)
+        let loginDelay = config.scheduleSettings.loginDelaySeconds
+        if loginDelay > 0 {
+            Logger.shared.info("Applying login delay: \(loginDelay) seconds")
+            sleep(UInt32(loginDelay))
+        }
     }
 
     private func openSoftwareUpdate() {

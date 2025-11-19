@@ -163,12 +163,19 @@ class DialogController {
             }
         }
 
-        // Info button
+        // Info button (for help)
         args += ["--infobuttontext", configuration.dialogContent.infoButtonText]
 
         // Help message
         let helpMessage = substituteVariables(in: configuration.dialogContent.helpMessageTemplate)
         args += ["--helpmessage", helpMessage]
+
+        // Timer for auto-dismiss (acts as implicit snooze when snooze is enabled)
+        if configuration.deferralSettings.snoozeEnabled && !isExhausted {
+            // Dialog timeout acts as snooze - user gets reminded again after snooze period
+            args += ["--timer", "300"]  // 5 minute display timeout
+            args += ["--hidetimerbar"]
+        }
 
         // Window size
         args += ["--width", String(branding.windowWidth)]
@@ -330,11 +337,17 @@ class DialogController {
 
         guard !iconURL.isEmpty else { return nil }
 
+        // Security: Validate URL
+        guard isValidURL(iconURL) else {
+            Logger.shared.error("Invalid icon URL: \(iconURL)")
+            return nil
+        }
+
         let tempPath = "/var/tmp/ddm-icon.png"
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-s", "-o", tempPath, iconURL]
+        process.arguments = ["-s", "-o", tempPath, "--max-time", "30", iconURL]
 
         do {
             try process.run()
@@ -354,7 +367,14 @@ class DialogController {
         }
 
         // Try URL
-        guard !configuration.brandingSettings.overlayIconURL.isEmpty else {
+        let overlayURL = configuration.brandingSettings.overlayIconURL
+        guard !overlayURL.isEmpty else {
+            return "/System/Library/CoreServices/Finder.app"
+        }
+
+        // Security: Validate URL
+        guard isValidURL(overlayURL) else {
+            Logger.shared.error("Invalid overlay icon URL: \(overlayURL)")
             return "/System/Library/CoreServices/Finder.app"
         }
 
@@ -362,7 +382,7 @@ class DialogController {
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-s", "-o", tempPath, configuration.brandingSettings.overlayIconURL]
+        process.arguments = ["-s", "-o", tempPath, "--max-time", "30", overlayURL]
 
         do {
             try process.run()
@@ -382,7 +402,14 @@ class DialogController {
         }
 
         // Try URL
-        guard !configuration.brandingSettings.bannerImageURL.isEmpty else {
+        let bannerURL = configuration.brandingSettings.bannerImageURL
+        guard !bannerURL.isEmpty else {
+            return nil
+        }
+
+        // Security: Validate URL
+        guard isValidURL(bannerURL) else {
+            Logger.shared.error("Invalid banner image URL: \(bannerURL)")
             return nil
         }
 
@@ -390,7 +417,7 @@ class DialogController {
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-s", "-o", tempPath, configuration.brandingSettings.bannerImageURL]
+        process.arguments = ["-s", "-o", tempPath, "--max-time", "30", bannerURL]
 
         do {
             try process.run()
@@ -485,6 +512,20 @@ class DialogController {
         } catch {
             return ""
         }
+    }
+
+    // MARK: - Security Helpers
+
+    private func isValidURL(_ urlString: String) -> Bool {
+        // Validate URL format and ensure it uses http/https
+        guard let url = URL(string: urlString),
+              let scheme = url.scheme?.lowercased(),
+              (scheme == "http" || scheme == "https") else {
+            return false
+        }
+        // Check for shell metacharacters that could be dangerous
+        let dangerousChars = CharacterSet(charactersIn: ";|&`$(){}[]<>\\'\"\n\r")
+        return urlString.rangeOfCharacter(from: dangerousChars) == nil
     }
 
     // MARK: - swiftDialog Installation
