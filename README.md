@@ -24,16 +24,18 @@ While Apple's Declarative Device Management (DDM) provides Mac Admins a powerful
 Jamf Configuration Profile (Managed Preferences):
 └── {PreferenceDomain}    # All configuration settings
 
-/Library/Management/{ManagementDirectory}/
-├── DDMmacOSUpdateReminder                # Signed binary
-├── DDMmacOSUpdateReminder.deferral.plist # Deferral state tracking
-└── DDMmacOSUpdateReminder.health.plist   # Health state for EAs
+/usr/local/bin/
+└── DDMmacOSUpdateReminder                # Signed binary
+
+/Library/Application Support/{PreferenceDomain}/
+├── deferral.plist                        # Deferral state tracking
+└── health.plist                          # Health state for EAs
 
 /Library/LaunchDaemons/
 └── {PreferenceDomain}.plist              # Self-managed by binary
 ```
 
-> **Note**: All configuration is stored in managed preferences via your Jamf Configuration Profile. The binary reads settings using the `--domain` argument, enabling multi-entity support. The management directory only contains the binary and runtime state files.
+> **Note**: All configuration is stored in managed preferences via your Jamf Configuration Profile. The binary reads settings using the `--domain` argument, enabling multi-entity support.
 
 ## Requirements
 
