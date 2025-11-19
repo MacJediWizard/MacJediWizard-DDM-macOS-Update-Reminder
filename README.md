@@ -21,16 +21,16 @@ While Apple's Declarative Device Management (DDM) provides Mac Admins a powerful
 ## Architecture
 
 ```
-/Library/Management/com.yourorg/
-├── ddm-update-reminder              # Signed binary
-├── ddm-deferral.plist               # Deferral tracking
-└── ddm-health.plist                 # Health state
+/Library/Management/com.macjediwizard/
+├── DDMUpdateReminder                # Signed binary
+├── DDMUpdateReminder.deferral.plist # Deferral tracking
+└── DDMUpdateReminder.health.plist   # Health state
 
 /Library/LaunchDaemons/
-└── com.yourorg.ddmupdatereminder.plist
+└── com.macjediwizard.ddmupdatereminder.plist
 
 Jamf Configuration Profile:
-└── com.yourorg.ddmupdatereminder    # Managed preferences
+└── com.macjediwizard.ddmupdatereminder    # Managed preferences
 ```
 
 ## Requirements
