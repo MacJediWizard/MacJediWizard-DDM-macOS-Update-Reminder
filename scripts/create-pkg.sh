@@ -21,20 +21,24 @@ PRODUCT_NAME="DDMmacOSUpdateReminder"
 VERSION="1.0.0"
 IDENTIFIER="com.macjediwizard.ddmmacosupdatereminder"
 
-# Configuration - UPDATE THESE VALUES
-INSTALLER_CERT="${INSTALLER_CERT:-Developer ID Installer: Your Name (TEAM_ID)}"
+# Configuration
 NOTARYTOOL_PROFILE="${NOTARYTOOL_PROFILE:-notarytool-profile}"
 
 cd "$PROJECT_ROOT"
 
-# Check for placeholder values
-if [[ "$INSTALLER_CERT" == *"Your Name"* ]]; then
-    echo "ERROR: Please update INSTALLER_CERT in this script with your certificate name"
-    echo "       or set the INSTALLER_CERT environment variable."
-    echo ""
-    echo "To find your certificate name:"
-    echo "  security find-identity -v -p codesigning"
-    exit 1
+# Auto-detect Developer ID Installer certificate
+if [[ -z "$INSTALLER_CERT" ]]; then
+    INSTALLER_CERT=$(security find-identity -v | grep "Developer ID Installer" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+
+    if [[ -z "$INSTALLER_CERT" ]]; then
+        echo "ERROR: No Developer ID Installer certificate found in keychain"
+        echo ""
+        echo "Available identities:"
+        security find-identity -v
+        exit 1
+    fi
+
+    echo "Auto-detected certificate: $INSTALLER_CERT"
 fi
 
 BINARY_PATH=".build/universal/$PRODUCT_NAME"

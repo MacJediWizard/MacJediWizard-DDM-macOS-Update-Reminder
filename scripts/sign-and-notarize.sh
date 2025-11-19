@@ -21,20 +21,24 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PRODUCT_NAME="DDMmacOSUpdateReminder"
 
-# Configuration - UPDATE THESE VALUES
-DEVELOPER_ID="${DEVELOPER_ID:-Developer ID Application: Your Name (TEAM_ID)}"
+# Configuration
 NOTARYTOOL_PROFILE="${NOTARYTOOL_PROFILE:-notarytool-profile}"
 
 cd "$PROJECT_ROOT"
 
-# Check for placeholder values
-if [[ "$DEVELOPER_ID" == *"Your Name"* ]]; then
-    echo "ERROR: Please update DEVELOPER_ID in this script with your certificate name"
-    echo "       or set the DEVELOPER_ID environment variable."
-    echo ""
-    echo "To find your certificate name:"
-    echo "  security find-identity -v -p codesigning"
-    exit 1
+# Auto-detect Developer ID Application certificate
+if [[ -z "$DEVELOPER_ID" ]]; then
+    DEVELOPER_ID=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+
+    if [[ -z "$DEVELOPER_ID" ]]; then
+        echo "ERROR: No Developer ID Application certificate found in keychain"
+        echo ""
+        echo "Available code signing identities:"
+        security find-identity -v -p codesigning
+        exit 1
+    fi
+
+    echo "Auto-detected certificate: $DEVELOPER_ID"
 fi
 
 echo "============================================"
