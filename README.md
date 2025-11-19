@@ -113,7 +113,9 @@ See [Documentation/Logging-Reference.md](Documentation/Logging-Reference.md) for
 
 ## Development
 
-### Building
+> **Note**: Most users should download the pre-built, signed binary from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases). Building from source is only necessary for contributors or custom modifications.
+
+### Building from Source
 
 Requires Xcode 15+ and macOS 14+.
 
@@ -121,10 +123,6 @@ Requires Xcode 15+ and macOS 14+.
 cd DDMNotifier
 xcodebuild -scheme DDMNotifier -configuration Release
 ```
-
-### Code Signing
-
-The binary must be signed with a Developer ID and notarized for distribution.
 
 ### Contributing
 
