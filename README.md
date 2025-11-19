@@ -21,17 +21,19 @@ While Apple's Declarative Device Management (DDM) provides Mac Admins a powerful
 ## Architecture
 
 ```
-/Library/Management/com.macjediwizard/
+/Library/Management/{ReverseDomainName}/
 ├── DDMmacOSUpdateReminder                # Signed binary
 ├── DDMmacOSUpdateReminder.deferral.plist # Deferral tracking
 └── DDMmacOSUpdateReminder.health.plist   # Health state
 
 /Library/LaunchDaemons/
-└── com.macjediwizard.ddmmacosupdatereminder.plist
+└── {PreferenceDomain}.plist
 
 Jamf Configuration Profile:
-└── com.macjediwizard.ddmmacosupdatereminder    # Managed preferences
+└── {PreferenceDomain}    # Managed preferences (set via --domain argument)
 ```
+
+> **Note**: `{ReverseDomainName}` and `{PreferenceDomain}` are configured in your Configuration Profile. The binary reads the domain via the `--domain` argument, enabling multi-entity support with a single binary.
 
 ## Requirements
 
