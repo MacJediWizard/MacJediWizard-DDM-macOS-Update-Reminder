@@ -1,0 +1,491 @@
+{
+  "title": "DDM macOS Update Reminder",
+  "description": "Configuration for DDM macOS Update Reminder notifications. Deploy as External Application in Jamf Pro.",
+  "__version__": "1.0.0",
+  "__preferenceDomain__": "com.macjediwizard.ddmupdatereminder",
+
+  "properties": {
+
+    "ConfigVersion": {
+      "title": "Configuration Version",
+      "description": "Version string for change detection. Update when modifying configuration.",
+      "type": "string",
+      "default": "1.0.0"
+    },
+
+    "OrganizationSettings": {
+      "title": "Organization Settings",
+      "description": "Core organizational identifiers and paths",
+      "type": "object",
+      "properties": {
+        "ReverseDomainName": {
+          "title": "Reverse Domain Name",
+          "description": "Organization's reverse domain notation (e.g., com.yourorg)",
+          "type": "string",
+          "default": "com.yourorg"
+        },
+        "OrganizationName": {
+          "title": "Organization Name",
+          "description": "Human-readable organization name for logs and messages",
+          "type": "string",
+          "default": "Your Organization"
+        },
+        "ManagementDirectory": {
+          "title": "Management Directory",
+          "description": "Base directory for management files",
+          "type": "string",
+          "default": "/Library/Management"
+        }
+      }
+    },
+
+    "BehaviorSettings": {
+      "title": "Behavior Settings",
+      "description": "Control when and how reminders are displayed",
+      "type": "object",
+      "properties": {
+        "DaysBeforeDeadlineDisplayReminder": {
+          "title": "Days Before Deadline to Display Reminder",
+          "description": "Number of days before DDM deadline to start showing reminders",
+          "type": "integer",
+          "default": 14,
+          "minimum": 1,
+          "maximum": 30
+        },
+        "DaysBeforeDeadlineBlurscreen": {
+          "title": "Days Before Deadline for Blurscreen",
+          "description": "Number of days before deadline to enable swiftDialog blurscreen",
+          "type": "integer",
+          "default": 3,
+          "minimum": 0,
+          "maximum": 14
+        },
+        "MeetingDelayMinutes": {
+          "title": "Meeting Delay (Minutes)",
+          "description": "Maximum minutes to wait if user has active display sleep assertion (meeting/presentation)",
+          "type": "integer",
+          "default": 75,
+          "minimum": 0,
+          "maximum": 240
+        },
+        "MeetingCheckIntervalSeconds": {
+          "title": "Meeting Check Interval (Seconds)",
+          "description": "Seconds between checks for active meetings/presentations",
+          "type": "integer",
+          "default": 300,
+          "minimum": 60,
+          "maximum": 600
+        },
+        "IgnoreAssertionsWithinHours": {
+          "title": "Ignore Assertions Within Hours",
+          "description": "Hours before deadline to ignore display sleep assertions and show reminder anyway",
+          "type": "integer",
+          "default": 24,
+          "minimum": 0,
+          "maximum": 72
+        },
+        "RandomDelayMaxSeconds": {
+          "title": "Random Delay Maximum (Seconds)",
+          "description": "Maximum random delay at scheduled times to stagger notifications across fleet",
+          "type": "integer",
+          "default": 1200,
+          "minimum": 0,
+          "maximum": 3600
+        }
+      }
+    },
+
+    "DeferralSettings": {
+      "title": "Deferral Settings",
+      "description": "Control user deferral and snooze behavior",
+      "type": "object",
+      "properties": {
+        "MaxDeferrals": {
+          "title": "Maximum Deferrals",
+          "description": "Maximum number of times user can defer (baseline, adjusted by schedule)",
+          "type": "integer",
+          "default": 10,
+          "minimum": 0,
+          "maximum": 50
+        },
+        "DeferralSchedule": {
+          "title": "Deferral Schedule",
+          "description": "Array defining max deferrals based on days remaining until deadline",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "DaysRemaining": {
+                "title": "Days Remaining",
+                "type": "integer"
+              },
+              "MaxDeferrals": {
+                "title": "Max Deferrals at This Threshold",
+                "type": "integer"
+              }
+            }
+          },
+          "default": [
+            { "DaysRemaining": 14, "MaxDeferrals": 10 },
+            { "DaysRemaining": 7, "MaxDeferrals": 5 },
+            { "DaysRemaining": 3, "MaxDeferrals": 2 },
+            { "DaysRemaining": 1, "MaxDeferrals": 0 }
+          ]
+        },
+        "ResetOnNewDeadline": {
+          "title": "Reset Deferrals on New Deadline",
+          "description": "Reset deferral count when DDM enforcement deadline changes",
+          "type": "boolean",
+          "default": true
+        },
+        "SnoozeEnabled": {
+          "title": "Snooze Enabled",
+          "description": "Allow users to snooze for a short period (separate from deferral)",
+          "type": "boolean",
+          "default": true
+        },
+        "SnoozeMinutes": {
+          "title": "Snooze Duration (Minutes)",
+          "description": "Minutes before reminder reappears after snooze",
+          "type": "integer",
+          "default": 120,
+          "minimum": 15,
+          "maximum": 480
+        },
+        "ExhaustedBehavior": {
+          "title": "Exhausted Deferrals Behavior",
+          "description": "Behavior when deferrals exhausted: NoRemindButton (show dialog without defer option) or AutoOpenUpdate (auto-open Software Update)",
+          "type": "string",
+          "enum": ["NoRemindButton", "AutoOpenUpdate"],
+          "default": "NoRemindButton"
+        },
+        "AutoOpenDelaySeconds": {
+          "title": "Auto-Open Delay (Seconds)",
+          "description": "Seconds before auto-opening Software Update when using AutoOpenUpdate behavior",
+          "type": "integer",
+          "default": 60,
+          "minimum": 10,
+          "maximum": 300
+        }
+      }
+    },
+
+    "ScheduleSettings": {
+      "title": "Schedule Settings",
+      "description": "Control LaunchDaemon execution schedule",
+      "type": "object",
+      "properties": {
+        "LaunchDaemonTimes": {
+          "title": "LaunchDaemon Run Times",
+          "description": "Array of times (24-hour format) when reminder should run",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Hour": {
+                "title": "Hour",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 23
+              },
+              "Minute": {
+                "title": "Minute",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 59
+              }
+            }
+          },
+          "default": [
+            { "Hour": 9, "Minute": 0 },
+            { "Hour": 14, "Minute": 0 }
+          ]
+        },
+        "RunAtLoad": {
+          "title": "Run at Load",
+          "description": "Run reminder when LaunchDaemon loads (login/boot)",
+          "type": "boolean",
+          "default": true
+        },
+        "LoginDelaySeconds": {
+          "title": "Login Delay (Seconds)",
+          "description": "Delay after login/boot before showing reminder",
+          "type": "integer",
+          "default": 60,
+          "minimum": 0,
+          "maximum": 300
+        }
+      }
+    },
+
+    "BrandingSettings": {
+      "title": "Branding Settings",
+      "description": "Customize visual appearance",
+      "type": "object",
+      "properties": {
+        "OverlayIconURL": {
+          "title": "Overlay Icon URL",
+          "description": "URL to organization's overlay icon (PNG). Leave empty to use default.",
+          "type": "string",
+          "default": ""
+        },
+        "OverlayIconPath": {
+          "title": "Overlay Icon Local Path",
+          "description": "Local path to overlay icon if not using URL",
+          "type": "string",
+          "default": ""
+        },
+        "MacOSIcons": {
+          "title": "macOS Version Icons",
+          "description": "Custom icons per macOS major version. Keys are major version numbers.",
+          "type": "object",
+          "default": {
+            "14": "https://ics.services.jamfcloud.com/icon/hash_eecee9688d1bc0426083d427d80c9ad48fa118b71d8d4962061d4de8d45747e7",
+            "15": "https://ics.services.jamfcloud.com/icon/hash_0968afcd54ff99edd98ec6d9a418a5ab0c851576b687756dc3004ec52bac704e",
+            "26": "https://ics.services.jamfcloud.com/icon/hash_7320c100c9ca155dc388e143dbc05620907e2d17d6bf74a8fb6d6278ece2c2b4",
+            "default": "https://ics.services.jamfcloud.com/icon/hash_4555d9dc8fecb4e2678faffa8bdcf43cba110e81950e07a4ce3695ec2d5579ee"
+          }
+        }
+      }
+    },
+
+    "SupportSettings": {
+      "title": "Support Settings",
+      "description": "IT support contact information",
+      "type": "object",
+      "properties": {
+        "TeamName": {
+          "title": "Support Team Name",
+          "description": "Name of IT support team",
+          "type": "string",
+          "default": "IT Support"
+        },
+        "Phone": {
+          "title": "Support Phone",
+          "description": "Support phone number",
+          "type": "string",
+          "default": ""
+        },
+        "Email": {
+          "title": "Support Email",
+          "description": "Support email address",
+          "type": "string",
+          "default": ""
+        },
+        "Website": {
+          "title": "Support Website",
+          "description": "Support website URL",
+          "type": "string",
+          "default": ""
+        },
+        "KBArticleID": {
+          "title": "KB Article ID",
+          "description": "Knowledge base article identifier",
+          "type": "string",
+          "default": ""
+        },
+        "KBArticleURL": {
+          "title": "KB Article URL",
+          "description": "Full URL to knowledge base article",
+          "type": "string",
+          "default": ""
+        },
+        "TicketSystemURL": {
+          "title": "Ticket System URL",
+          "description": "URL to open a support ticket",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+
+    "DialogContent": {
+      "title": "Dialog Content",
+      "description": "Customize dialog text and messages. Use {variables} for dynamic content.",
+      "type": "object",
+      "properties": {
+        "TitleUpdate": {
+          "title": "Title for Updates",
+          "description": "Dialog title for minor version updates",
+          "type": "string",
+          "default": "macOS Update Required"
+        },
+        "TitleUpgrade": {
+          "title": "Title for Upgrades",
+          "description": "Dialog title for major version upgrades",
+          "type": "string",
+          "default": "macOS Upgrade Required"
+        },
+        "Button1Text": {
+          "title": "Primary Button Text",
+          "description": "Text for main action button",
+          "type": "string",
+          "default": "Open Software Update"
+        },
+        "Button2Text": {
+          "title": "Secondary Button Text",
+          "description": "Text for defer/remind later button",
+          "type": "string",
+          "default": "Remind Me Later"
+        },
+        "Button2TextExhausted": {
+          "title": "Secondary Button When Exhausted",
+          "description": "Text shown when no deferrals remain (if button is displayed)",
+          "type": "string",
+          "default": "No Deferrals Remaining"
+        },
+        "SnoozeButtonText": {
+          "title": "Snooze Button Text",
+          "description": "Text for snooze button. Use {snoozeMinutes} variable.",
+          "type": "string",
+          "default": "Snooze {snoozeMinutes} Minutes"
+        },
+        "InfoButtonText": {
+          "title": "Info Button Text",
+          "description": "Text for help/info button",
+          "type": "string",
+          "default": "Help"
+        },
+        "MessageTemplate": {
+          "title": "Main Message Template",
+          "description": "Main dialog message. Supports markdown and {variables}.",
+          "type": "string",
+          "default": "**A required macOS {actionLower} is now available**\n---\nHappy {dayOfWeek}, {userFirstName}!\n\nPlease {actionLower} to macOS **{targetVersion}** to ensure your Mac remains secure and compliant with organizational policies.\n\nTo perform the {actionLower} now, click **{button1Text}**, review the on-screen instructions, then click **{softwareUpdateButtonText}**.\n\nIf you are unable to perform this {actionLower} now, click **{button2Text}** to be reminded again later.\n\nHowever, your device **will automatically restart and {actionLower}** on **{deadlineFormatted}** if you have not completed the {actionLower} before the deadline.\n\n**Deferrals Remaining:** {deferralsRemaining} of {maxDeferrals}\n\nFor assistance, please contact **{supportTeamName}**."
+        },
+        "MessageTemplateExhausted": {
+          "title": "Message When Deferrals Exhausted",
+          "description": "Message shown when user has no deferrals remaining",
+          "type": "string",
+          "default": "**Immediate Action Required**\n---\n{userFirstName}, you have used all available deferrals.\n\nYour Mac **must** be updated to macOS **{targetVersion}** immediately.\n\nClick **{button1Text}** to begin the update process now.\n\nIf you do not update, your device will automatically restart and update on **{deadlineFormatted}**.\n\nFor assistance, contact **{supportTeamName}**."
+        },
+        "PerVersionMessages": {
+          "title": "Per-Version Custom Messages",
+          "description": "Custom messages for specific target macOS versions. Keys are version strings (e.g., '15.0', '26.0').",
+          "type": "object",
+          "default": {}
+        },
+        "InfoboxTemplate": {
+          "title": "Infobox Template",
+          "description": "Content for the information sidebar",
+          "type": "string",
+          "default": "**Current:** {installedVersion}\n\n**Required:** {targetVersion}\n\n**Deadline:** {deadlineFormatted}\n\n**Days Remaining:** {daysRemaining}"
+        },
+        "HelpMessageTemplate": {
+          "title": "Help Message Template",
+          "description": "Content shown when user clicks help/info button",
+          "type": "string",
+          "default": "For assistance, please contact: **{supportTeamName}**\n- **Phone:** {supportPhone}\n- **Email:** {supportEmail}\n- **Website:** {supportWebsite}\n- **KB Article:** {supportKBArticleID}\n\n**User Information:**\n- **Name:** {userFullName}\n- **Username:** {userName}\n\n**Computer Information:**\n- **Name:** {computerName}\n- **Serial:** {serialNumber}\n- **macOS:** {installedVersion}"
+        }
+      }
+    },
+
+    "HealthSettings": {
+      "title": "Health Monitoring Settings",
+      "description": "Configure health state reporting for Extension Attributes",
+      "type": "object",
+      "properties": {
+        "EnableHealthReporting": {
+          "title": "Enable Health Reporting",
+          "description": "Write health state to plist for Extension Attribute monitoring",
+          "type": "boolean",
+          "default": true
+        },
+        "HealthStatePath": {
+          "title": "Health State File Path",
+          "description": "Filename for health state plist (in ManagementDirectory)",
+          "type": "string",
+          "default": "ddm-health.plist"
+        },
+        "MaxErrorLogEntries": {
+          "title": "Maximum Error Log Entries",
+          "description": "Maximum number of error entries to keep in health state",
+          "type": "integer",
+          "default": 50,
+          "minimum": 10,
+          "maximum": 200
+        }
+      }
+    },
+
+    "AdvancedSettings": {
+      "title": "Advanced Settings",
+      "description": "Advanced configuration options",
+      "type": "object",
+      "properties": {
+        "SwiftDialogMinVersion": {
+          "title": "Minimum swiftDialog Version",
+          "description": "Minimum required swiftDialog version",
+          "type": "string",
+          "default": "2.4.0"
+        },
+        "SwiftDialogAutoInstall": {
+          "title": "Auto-Install swiftDialog",
+          "description": "Automatically install or update swiftDialog if needed",
+          "type": "boolean",
+          "default": true
+        },
+        "VerboseLogging": {
+          "title": "Verbose Logging",
+          "description": "Enable verbose debug logging",
+          "type": "boolean",
+          "default": false
+        },
+        "TestMode": {
+          "title": "Test Mode",
+          "description": "Show dialog regardless of DDM state (for testing)",
+          "type": "boolean",
+          "default": false
+        },
+        "TestDaysRemaining": {
+          "title": "Test Days Remaining",
+          "description": "Simulated days remaining when in test mode",
+          "type": "integer",
+          "default": 5,
+          "minimum": 0,
+          "maximum": 30
+        }
+      }
+    }
+  },
+
+  "MessageVariables": {
+    "title": "Available Message Variables",
+    "description": "Reference list of variables available in message templates",
+    "type": "array",
+    "readOnly": true,
+    "default": [
+      "{userFirstName} - Logged-in user's first name",
+      "{userFullName} - User's full display name",
+      "{userName} - Username (short name)",
+      "{computerName} - Computer name",
+      "{serialNumber} - Hardware serial number",
+      "{installedVersion} - Current macOS version",
+      "{installedBuild} - Current macOS build",
+      "{targetVersion} - DDM required version",
+      "{targetBuild} - DDM required build",
+      "{action} - 'Update' or 'Upgrade'",
+      "{actionLower} - 'update' or 'upgrade'",
+      "{deadlineFormatted} - Human-readable deadline",
+      "{deadlineDate} - Deadline date only",
+      "{deadlineTime} - Deadline time only",
+      "{daysRemaining} - Days until deadline",
+      "{hoursRemaining} - Hours until deadline",
+      "{deferralsRemaining} - Remaining deferral count",
+      "{deferralsUsed} - Used deferral count",
+      "{maxDeferrals} - Maximum allowed at current threshold",
+      "{dayOfWeek} - Current day name",
+      "{currentDate} - Current date",
+      "{currentTime} - Current time",
+      "{button1Text} - Primary button text",
+      "{button2Text} - Secondary button text",
+      "{softwareUpdateButtonText} - 'Restart Now' or 'Upgrade Now'",
+      "{supportTeamName} - Support team name",
+      "{supportPhone} - Support phone",
+      "{supportEmail} - Support email",
+      "{supportWebsite} - Support website",
+      "{supportKBArticleID} - KB article ID",
+      "{supportKBArticleURL} - KB article URL",
+      "{snoozeMinutes} - Snooze duration in minutes"
+    ]
+  }
+}
