@@ -22,15 +22,15 @@ While Apple's Declarative Device Management (DDM) provides Mac Admins a powerful
 
 ```
 /Library/Management/com.macjediwizard/
-├── DDMUpdateReminder                # Signed binary
-├── DDMUpdateReminder.deferral.plist # Deferral tracking
-└── DDMUpdateReminder.health.plist   # Health state
+├── DDMmacOSUpdateReminder                # Signed binary
+├── DDMmacOSUpdateReminder.deferral.plist # Deferral tracking
+└── DDMmacOSUpdateReminder.health.plist   # Health state
 
 /Library/LaunchDaemons/
-└── com.macjediwizard.ddmupdatereminder.plist
+└── com.macjediwizard.ddmmacosupdatereminder.plist
 
 Jamf Configuration Profile:
-└── com.macjediwizard.ddmupdatereminder    # Managed preferences
+└── com.macjediwizard.ddmmacosupdatereminder    # Managed preferences
 ```
 
 ## Requirements
