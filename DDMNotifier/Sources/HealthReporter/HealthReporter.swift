@@ -126,7 +126,18 @@ class HealthReporter {
         // Create directory if needed
         if !fileManager.fileExists(atPath: directory) {
             do {
-                try fileManager.createDirectory(atPath: directory, withIntermediateDirectories: true)
+                try fileManager.createDirectory(
+                    atPath: directory,
+                    withIntermediateDirectories: true,
+                    attributes: [
+                        .posixPermissions: 0o755
+                    ]
+                )
+                // Set ownership separately (createDirectory doesn't support owner attributes)
+                try fileManager.setAttributes([
+                    .ownerAccountName: "root",
+                    .groupOwnerAccountName: "wheel"
+                ], ofItemAtPath: directory)
             } catch {
                 Logger.shared.error("Failed to create directory: \(error.localizedDescription)")
                 return
@@ -137,7 +148,13 @@ class HealthReporter {
             let encoder = PropertyListEncoder()
             encoder.outputFormat = .xml
             let data = try encoder.encode(state)
-            try data.write(to: URL(fileURLWithPath: healthFilePath))
+            try data.write(to: URL(fileURLWithPath: healthFilePath), options: .atomic)
+            // Set file permissions
+            try fileManager.setAttributes([
+                .posixPermissions: 0o644,
+                .ownerAccountName: "root",
+                .groupOwnerAccountName: "wheel"
+            ], ofItemAtPath: healthFilePath)
         } catch {
             Logger.shared.error("Failed to save health state: \(error.localizedDescription)")
         }

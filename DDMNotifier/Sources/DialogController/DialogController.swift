@@ -83,6 +83,18 @@ class DialogController {
         // Build dialog arguments
         let arguments = buildDialogArguments()
 
+        // Cleanup temp files after dialog exits
+        defer {
+            let tempFiles = [
+                "/var/tmp/ddm-icon.png",
+                "/var/tmp/ddm-overlay.png",
+                "/var/tmp/ddm-banner.png"
+            ]
+            for file in tempFiles {
+                try? FileManager.default.removeItem(atPath: file)
+            }
+        }
+
         // Run dialog
         let process = Process()
         process.executableURL = URL(fileURLWithPath: dialogBinary)
@@ -603,7 +615,25 @@ class DialogController {
     }
 
     private func verifyTeamID(_ pkgPath: String, expected: String) -> Bool {
-        let result = runCommand("/usr/sbin/spctl", arguments: ["-a", "-vv", "-t", "install", pkgPath])
-        return result.contains(expected)
+        // Note: spctl outputs to stderr, not stdout
+        let pipe = Pipe()
+        let errorPipe = Pipe()
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/spctl")
+        process.arguments = ["-a", "-vv", "-t", "install", pkgPath]
+        process.standardOutput = pipe
+        process.standardError = errorPipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            // spctl outputs signature info to stderr
+            let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: errorData, encoding: .utf8) ?? ""
+            return output.contains(expected)
+        } catch {
+            Logger.shared.error("Failed to verify Team ID: \(error.localizedDescription)")
+            return false
+        }
     }
 }

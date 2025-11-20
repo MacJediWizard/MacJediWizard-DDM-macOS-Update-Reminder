@@ -65,7 +65,18 @@ class DeferralManager {
         // Create directory if needed
         if !fileManager.fileExists(atPath: directory) {
             do {
-                try fileManager.createDirectory(atPath: directory, withIntermediateDirectories: true)
+                try fileManager.createDirectory(
+                    atPath: directory,
+                    withIntermediateDirectories: true,
+                    attributes: [
+                        .posixPermissions: 0o755
+                    ]
+                )
+                // Set ownership separately (createDirectory doesn't support owner attributes)
+                try fileManager.setAttributes([
+                    .ownerAccountName: "root",
+                    .groupOwnerAccountName: "wheel"
+                ], ofItemAtPath: directory)
             } catch {
                 Logger.shared.error("Failed to create directory: \(error.localizedDescription)")
                 return
@@ -76,7 +87,13 @@ class DeferralManager {
             let encoder = PropertyListEncoder()
             encoder.outputFormat = .xml
             let data = try encoder.encode(state)
-            try data.write(to: URL(fileURLWithPath: stateFilePath))
+            try data.write(to: URL(fileURLWithPath: stateFilePath), options: .atomic)
+            // Set file permissions
+            try fileManager.setAttributes([
+                .posixPermissions: 0o644,
+                .ownerAccountName: "root",
+                .groupOwnerAccountName: "wheel"
+            ], ofItemAtPath: stateFilePath)
             Logger.shared.deferral("Saved deferral state")
         } catch {
             Logger.shared.error("Failed to save deferral state: \(error.localizedDescription)")

@@ -9,6 +9,14 @@
 
 import Foundation
 
+// MARK: - LaunchDaemon Errors
+
+enum LaunchDaemonError: Error {
+    case binaryNotFound
+    case plistWriteFailure
+    case loadFailure
+}
+
 // MARK: - LaunchDaemon Manager
 
 class LaunchDaemonManager {
@@ -32,6 +40,12 @@ class LaunchDaemonManager {
 
     func createOrUpdateLaunchDaemon() throws {
         Logger.shared.launchDaemon("Creating/updating LaunchDaemon")
+
+        // Verify binary exists
+        guard FileManager.default.fileExists(atPath: binaryPath) else {
+            Logger.shared.error("Binary not found at \(binaryPath)")
+            throw LaunchDaemonError.binaryNotFound
+        }
 
         // Unload existing daemon if present
         if FileManager.default.fileExists(atPath: daemonPath) {
@@ -101,6 +115,12 @@ class LaunchDaemonManager {
                 <key>PATH</key>
                 <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin</string>
             </dict>
+            <key>AbandonProcessGroup</key>
+            <true/>
+            <key>StandardOutPath</key>
+            <string>/var/log/DDMmacOSUpdateReminder.log</string>
+            <key>StandardErrorPath</key>
+            <string>/var/log/DDMmacOSUpdateReminder.log</string>
         </dict>
         </plist>
         """
