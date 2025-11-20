@@ -11,7 +11,7 @@
 import Foundation
 
 // MARK: - Version Info
-let appVersion = "1.0.3"
+let appVersion = "1.0.4"
 let appName = "DDMmacOSUpdateReminder"
 
 // MARK: - Main Entry Point
@@ -247,6 +247,8 @@ class DDMUpdateReminderApp {
             return
         }
 
+        // Use default path since configuration is not available when this is called
+        // Note: If ManagementDirectory is customized, this error state won't appear in the custom location
         let directory = "/Library/Application Support/\(preferenceDomain)"
         let healthPath = "\(directory)/health.plist"
         let fileManager = FileManager.default

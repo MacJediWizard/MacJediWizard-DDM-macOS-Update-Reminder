@@ -26,8 +26,8 @@ class DeferralManager {
     private var state: DeferralState
 
     private var stateFilePath: String {
-        let appSupport = "/Library/Application Support/\(preferenceDomain)"
-        return "\(appSupport)/deferral.plist"
+        let baseDir = "\(configuration.organizationSettings.managementDirectory)/\(preferenceDomain)"
+        return "\(baseDir)/deferral.plist"
     }
 
     init(preferenceDomain: String, configuration: Configuration) {

@@ -42,8 +42,8 @@ class HealthReporter {
     private let configuration: Configuration
 
     private var healthFilePath: String {
-        let appSupport = "/Library/Application Support/\(preferenceDomain)"
-        return "\(appSupport)/health.plist"
+        let baseDir = "\(configuration.organizationSettings.managementDirectory)/\(preferenceDomain)"
+        return "\(baseDir)/health.plist"
     }
 
     init(preferenceDomain: String, configuration: Configuration) {
