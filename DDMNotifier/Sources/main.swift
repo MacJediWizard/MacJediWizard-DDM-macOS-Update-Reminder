@@ -197,25 +197,68 @@ class DDMUpdateReminderApp {
             return true
         } catch ConfigurationError.profileNotFound {
             Logger.shared.error("Configuration profile not found for domain: \(preferenceDomain)")
-            healthReporter?.updateHealthState(
-                status: .configMissing,
-                error: "Configuration profile not found"
-            )
+            writeConfigErrorToHealth(status: "ConfigMissing", error: "Configuration profile not found")
             return false
         } catch ConfigurationError.missingRequiredKey(let key) {
             Logger.shared.error("Missing required configuration key: \(key)")
-            healthReporter?.updateHealthState(
-                status: .configError,
-                error: "Missing required key: \(key)"
-            )
+            writeConfigErrorToHealth(status: "ConfigError", error: "Missing required key: \(key)")
             return false
         } catch {
             Logger.shared.error("Failed to load configuration: \(error.localizedDescription)")
-            healthReporter?.updateHealthState(
-                status: .configError,
-                error: error.localizedDescription
-            )
+            writeConfigErrorToHealth(status: "ConfigError", error: error.localizedDescription)
             return false
+        }
+    }
+
+    /// Writes configuration errors directly to health file (before healthReporter is available)
+    private func writeConfigErrorToHealth(status: String, error: String) {
+        let directory = "/Library/Application Support/\(preferenceDomain)"
+        let healthPath = "\(directory)/health.plist"
+        let fileManager = FileManager.default
+
+        // Create directory if needed
+        if !fileManager.fileExists(atPath: directory) {
+            do {
+                try fileManager.createDirectory(
+                    atPath: directory,
+                    withIntermediateDirectories: true,
+                    attributes: [.posixPermissions: 0o755]
+                )
+                try fileManager.setAttributes([
+                    .ownerAccountName: "root",
+                    .groupOwnerAccountName: "wheel"
+                ], ofItemAtPath: directory)
+            } catch {
+                Logger.shared.error("Failed to create directory for health file: \(error.localizedDescription)")
+                return
+            }
+        }
+
+        // Create minimal health state dictionary
+        let dateFormatter = ISO8601DateFormatter()
+        let healthDict: [String: Any] = [
+            "LastRunDate": dateFormatter.string(from: Date()),
+            "LastRunStatus": status,
+            "ConfigProfileDetected": false,
+            "LastUserAction": "None",
+            "ErrorLog": ["\(dateFormatter.string(from: Date())) - \(error)"]
+        ]
+
+        // Write plist
+        do {
+            let plistData = try PropertyListSerialization.data(
+                fromPropertyList: healthDict,
+                format: .xml,
+                options: 0
+            )
+            try plistData.write(to: URL(fileURLWithPath: healthPath), options: .atomic)
+            try fileManager.setAttributes([
+                .posixPermissions: 0o644,
+                .ownerAccountName: "root",
+                .groupOwnerAccountName: "wheel"
+            ], ofItemAtPath: healthPath)
+        } catch {
+            Logger.shared.error("Failed to write config error to health file: \(error.localizedDescription)")
         }
     }
 
@@ -342,16 +385,6 @@ class DDMUpdateReminderApp {
                 enforcement: enforcement,
                 deferralManager: deferralManager,
                 userAction: "Deferred"
-            )
-
-        case .snoozed:
-            Logger.shared.userAction("User clicked: Snooze")
-            deferralManager.recordSnooze()
-            healthReporter?.updateHealthState(
-                status: .success,
-                enforcement: enforcement,
-                deferralManager: deferralManager,
-                userAction: "Snoozed"
             )
 
         case .info:

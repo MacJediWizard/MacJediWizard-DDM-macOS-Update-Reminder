@@ -14,7 +14,6 @@ import Foundation
 enum DialogResult {
     case openSoftwareUpdate
     case deferred
-    case snoozed
     case info
     case timeout
     case error(String)
@@ -359,7 +358,7 @@ class DialogController {
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-s", "-o", tempPath, "--max-time", "30", iconURL]
+        process.arguments = ["-L", "-s", "-o", tempPath, "--max-time", "30", iconURL]
 
         do {
             try process.run()
@@ -394,7 +393,7 @@ class DialogController {
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-s", "-o", tempPath, "--max-time", "30", overlayURL]
+        process.arguments = ["-L", "-s", "-o", tempPath, "--max-time", "30", overlayURL]
 
         do {
             try process.run()
@@ -429,7 +428,7 @@ class DialogController {
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-s", "-o", tempPath, "--max-time", "30", bannerURL]
+        process.arguments = ["-L", "-s", "-o", tempPath, "--max-time", "30", bannerURL]
 
         do {
             try process.run()
@@ -552,6 +551,12 @@ class DialogController {
             return false
         }
 
+        // Validate the download URL
+        guard isValidURL(pkgURL) else {
+            Logger.shared.error("Invalid swiftDialog download URL: \(pkgURL)")
+            return false
+        }
+
         // Download
         let tempPkg = "/var/tmp/dialog.pkg"
         let downloadProcess = Process()
@@ -597,7 +602,7 @@ class DialogController {
     }
 
     private func getSwiftDialogPkgURL(from apiURL: String) -> String? {
-        let result = runCommand("/usr/bin/curl", arguments: ["-s", apiURL])
+        let result = runCommand("/usr/bin/curl", arguments: ["-s", "--max-time", "30", apiURL])
 
         // Simple parsing for browser_download_url ending in .pkg
         let lines = result.components(separatedBy: "\"browser_download_url\"")
