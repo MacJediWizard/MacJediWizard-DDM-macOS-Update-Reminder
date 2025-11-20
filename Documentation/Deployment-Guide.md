@@ -170,7 +170,7 @@ sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdater
 ### Check Logs
 
 ```bash
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last 1h
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --last 1h
 ```
 
 ## swiftDialog Dependency
@@ -204,9 +204,8 @@ Create Extension Attributes in Jamf Pro for monitoring. Scripts are in `JamfReso
 |---------------------|--------|-----------|-------------|
 | Health Status | `EA-Health-Status.sh` | String | Overall health status |
 | Deferrals Remaining | `EA-Deferrals-Remaining.sh` | String | User's remaining deferrals |
-| Last Run Status | `EA-Last-Run-Status.sh` | String | Result of last execution |
+| Last Run Status | `EA-Last-Run-Status.sh` | String | Result of last execution (includes last user action) |
 | Enforcement Deadline | `EA-Enforcement-Deadline.sh` | String | DDM deadline date |
-| User Actions | `EA-User-Actions.sh` | String | Last user action taken |
 
 ### Creating Extension Attributes in Jamf Pro
 
@@ -381,7 +380,7 @@ Examples:
 
 2. Check for errors:
    ```bash
-   log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last 1h
+   log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --last 1h
    ```
 
 ### Configuration Not Applied

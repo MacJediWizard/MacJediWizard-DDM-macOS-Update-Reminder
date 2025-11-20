@@ -20,7 +20,7 @@ launchctl list | grep ddmupdatereminder
 defaults read com.macjediwizard.ddmupdatereminder ConfigVersion
 
 # Check recent logs
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last 1h
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --last 1h
 ```
 
 ## Common Issues
@@ -176,7 +176,7 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
 
 4. Review logs for download errors:
    ```bash
-   log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND eventMessage CONTAINS "icon"' --last 1h
+   log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND eventMessage CONTAINS "icon"' --last 1h
    ```
 
 ### Issue: Wrong Deadline Displayed
@@ -219,19 +219,19 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
 ### Find Startup Issues
 
 ```bash
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND category == "preflight"' --last 24h
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "preflight"' --last 24h
 ```
 
 ### Find Configuration Errors
 
 ```bash
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND (category == "config" OR messageType == error)' --last 24h
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND (category == "config" OR messageType == error)' --last 24h
 ```
 
 ### Track User Behavior
 
 ```bash
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND category == "userAction"' --last 7d
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "userAction"' --last 7d
 ```
 
 ## Reset and Clean State
@@ -279,7 +279,7 @@ Enable test mode for debugging:
 
 3. Stream logs in another terminal:
    ```bash
-   log stream --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --level debug
+   log stream --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --level debug
    ```
 
 ## Getting Help

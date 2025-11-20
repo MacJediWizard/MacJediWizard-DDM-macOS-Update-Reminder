@@ -11,6 +11,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional customization options
 - Extended localization support
 
+## [1.0.3] - 2025-11-20
+
+### Fixed
+- **EA-Health-Status.sh**: Fixed ERROR_COUNT calculation that caused blank results in Jamf Pro inventory
+
+### Removed
+- **EA-User-Actions.sh**: Removed redundant Extension Attribute - user action is already shown in EA-Last-Run-Status.sh
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
+## [1.0.2] - 2025-11-20
+
+### Fixed
+- **Template formatting**: Added automatic conversion of `\n` to actual newlines in message templates (Jamf Pro strips newlines from Custom Schema text fields)
+- **Info button**: Fixed issue where both "Help" text and "?" icon appeared; now only shows icon when InfoButtonText is empty
+- **Extension Attributes**: Fixed all EAs to use correct plist key names (lowercase camelCase) and proper managed preferences detection
+
+### Changed
+- Updated Configuration-Guide.md with documentation about using `\n` for line breaks in templates
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
 ## [1.0.1] - 2025-11-19
 
 ### Added
@@ -49,7 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Deferrals Remaining
   - Last Run Status
   - Enforcement Deadline
-  - User Actions
 - Message template variables for dynamic content
 - Support for custom icons, overlay images, and branding
 - Automatic swiftDialog installation option

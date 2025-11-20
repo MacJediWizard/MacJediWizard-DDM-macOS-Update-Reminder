@@ -112,9 +112,8 @@ Health monitoring Extension Attributes are provided in `JamfResources/ExtensionA
 
 - **Health Status**: Overall configuration and run status
 - **Deferrals Remaining**: User's remaining deferral count
-- **Last Run Status**: Result of last execution
+- **Last Run Status**: Result of last execution (includes last user action)
 - **Enforcement Deadline**: DDM deadline date
-- **User Actions**: Last user action taken
 
 ## Logging
 
@@ -122,13 +121,13 @@ Uses macOS Unified Logging:
 
 ```bash
 # All logs
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last 1h
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --last 1h
 
 # Errors only
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND messageType == error' --last 24h
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND messageType == error' --last 24h
 
 # Real-time streaming
-log stream --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --level debug
+log stream --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --level debug
 ```
 
 See [Logging Reference](Documentation/Logging-Reference.md) for complete predicates.

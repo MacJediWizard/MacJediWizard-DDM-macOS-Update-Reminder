@@ -262,7 +262,7 @@ Use these variables in message templates:
 
 3. Check unified logs:
    ```bash
-   log stream --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --level debug
+   log stream --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --level debug
    ```
 
 4. Disable test mode for production
