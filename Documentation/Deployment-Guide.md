@@ -20,13 +20,14 @@ Step-by-step guide to deploying DDM macOS Update Reminder in your environment.
 After deployment, files are located at:
 
 ```
-/usr/local/bin/DDMmacOSUpdateReminder              # Binary
+/usr/local/bin/DDMmacOSUpdateReminder                    # Binary
 
 /Library/Application Support/{PreferenceDomain}/
-├── deferral.plist                                 # Deferral state
-└── health.plist                                   # Health state for EAs
+├── deferral.plist                                       # Deferral state
+└── health.plist                                         # Health state for EAs
 
-/Library/LaunchDaemons/{PreferenceDomain}.plist    # LaunchDaemon
+/Library/LaunchDaemons/{PreferenceDomain}.plist          # Main LaunchDaemon
+/Library/LaunchDaemons/{PreferenceDomain}.watcher.plist  # Watcher LaunchDaemon
 ```
 
 Where `{PreferenceDomain}` is `com.macjediwizard.ddmupdatereminder` by default.
@@ -63,13 +64,13 @@ At minimum, configure:
 
 Download the signed and notarized package from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases):
 
-- **DDMmacOSUpdateReminder-1.0.0.pkg**
+- **DDMmacOSUpdateReminder-1.0.1.pkg**
 
 This installs the binary to `/usr/local/bin/DDMmacOSUpdateReminder`.
 
 ### Create Jamf Policy
 
-1. Upload `DDMmacOSUpdateReminder-1.0.0.pkg` to Jamf Pro
+1. Upload `DDMmacOSUpdateReminder-1.0.1.pkg` to Jamf Pro
 2. Create new policy
 3. Add the package
 4. **Important**: Add a post-install script (see Step 3)
@@ -115,11 +116,18 @@ exit 0
 
 ### What Setup Does
 
-The `--setup` command:
-- Creates the LaunchDaemon at `/Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist`
-- Configures run times from your Configuration Profile
-- Loads the daemon into launchd
-- The daemon will then run at scheduled times and at login
+The `--setup` command creates two LaunchDaemons:
+
+1. **Main daemon** (`com.macjediwizard.ddmupdatereminder.plist`)
+   - Runs at times configured in your Configuration Profile
+   - Displays the reminder dialog when DDM enforcement is active
+
+2. **Watcher daemon** (`com.macjediwizard.ddmupdatereminder.watcher.plist`)
+   - Runs every 15 minutes
+   - Monitors for Configuration Profile schedule changes
+   - Automatically updates the main daemon when schedule changes
+
+This self-healing design means you only need to run `--setup` once during initial deployment. Future schedule changes in your Configuration Profile are automatically applied.
 
 ## Step 4: Verify Installation
 
@@ -127,17 +135,19 @@ The `--setup` command:
 
 ```bash
 /usr/local/bin/DDMmacOSUpdateReminder --version
-# Should output: DDMmacOSUpdateReminder version 1.0.0
+# Should output: DDMmacOSUpdateReminder version 1.0.1
 ```
 
-### Check LaunchDaemon
+### Check LaunchDaemons
 
 ```bash
-# Verify plist exists
+# Verify plists exist
 ls -la /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
+ls -la /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.watcher.plist
 
-# Verify daemon is loaded
+# Verify daemons are loaded
 launchctl list | grep ddmupdatereminder
+# Should show both main daemon and watcher daemon
 ```
 
 ### Check Configuration Profile
@@ -213,11 +223,10 @@ Simply update the Configuration Profile in Jamf Pro. The binary reads settings a
 ### Update Binary
 
 1. Upload new package version to Jamf Pro
-2. Deploy via policy
-3. Run setup again if LaunchDaemon schedule changed:
-   ```bash
-   sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
-   ```
+2. Deploy via policy using the same policy (set execution frequency appropriately)
+3. The post-install script runs `--setup` again, which is safe to run multiple times
+
+**Note**: The watcher daemon automatically syncs schedule changes from your Configuration Profile. You don't need to manually re-run setup when changing reminder times - just update the Configuration Profile and the watcher will apply the changes within 15 minutes.
 
 ### Uninstall
 
@@ -232,14 +241,19 @@ BINARY="/usr/local/bin/DDMmacOSUpdateReminder"
 PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
 SUPPORT_DIR="/Library/Application Support/${PREF_DOMAIN}"
 DAEMON_PLIST="/Library/LaunchDaemons/${PREF_DOMAIN}.plist"
+WATCHER_PLIST="/Library/LaunchDaemons/${PREF_DOMAIN}.watcher.plist"
 
-# Unload LaunchDaemon
+# Unload LaunchDaemons
 if [[ -f "$DAEMON_PLIST" ]]; then
     launchctl bootout system "$DAEMON_PLIST" 2>/dev/null
+fi
+if [[ -f "$WATCHER_PLIST" ]]; then
+    launchctl bootout system "$WATCHER_PLIST" 2>/dev/null
 fi
 
 # Remove files
 rm -f "$DAEMON_PLIST"
+rm -f "$WATCHER_PLIST"
 rm -f "$BINARY"
 rm -rf "$SUPPORT_DIR"
 
@@ -257,7 +271,8 @@ Required:
                        (e.g., com.macjediwizard.ddmupdatereminder)
 
 Options:
-  --setup              Create/update LaunchDaemon and exit
+  --setup              Create/update LaunchDaemons (main + watcher) and exit
+  --sync-check         Check if schedule needs sync and update if needed
   --test               Run in test mode (show dialog regardless of DDM state)
   --debug              Skip root check (for Xcode testing only)
   --version, -v        Print version and exit

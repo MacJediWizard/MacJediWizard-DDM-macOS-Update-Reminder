@@ -10,6 +10,7 @@ While Apple's Declarative Device Management (DDM) provides Mac Admins a powerful
 
 - **Configuration Profile Driven**: All settings managed via Jamf Configuration Profiles
 - **Deploy Once**: Binary reads configuration from managed preferences - no script redeployment needed
+- **Self-Healing Schedule**: Watcher daemon automatically syncs schedule changes from Configuration Profile
 - **Flexible Deferrals**: Configurable deferral limits that decrease as deadline approaches
 - **Snooze Support**: Optional short-term snooze separate from deferrals
 - **Meeting Awareness**: Detects presentations/meetings and waits before displaying
@@ -43,7 +44,7 @@ This tool uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to disp
 
 Download from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases):
 
-- **DDMmacOSUpdateReminder-1.0.0.pkg**
+- **DDMmacOSUpdateReminder-1.0.1.pkg**
 
 Upload to Jamf Pro and create a policy with a post-install script:
 
@@ -52,7 +53,7 @@ Upload to Jamf Pro and create a policy with a post-install script:
 /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
 ```
 
-This creates the LaunchDaemon that runs the reminder at scheduled times.
+This creates two LaunchDaemons: the main reminder daemon and a watcher daemon that automatically syncs schedule changes from your Configuration Profile.
 
 ### 3. Verify Installation
 
@@ -78,7 +79,8 @@ See the [Deployment Guide](Documentation/Deployment-Guide.md) for complete instr
 ├── deferral.plist                                                 # Deferral state
 └── health.plist                                                   # Health state for EAs
 
-/Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist   # LaunchDaemon
+/Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist          # Main LaunchDaemon
+/Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.watcher.plist  # Watcher LaunchDaemon
 ```
 
 ## Configuration
