@@ -148,9 +148,10 @@ struct DeferralSettings {
     }
 
     func maxDeferralsForDaysRemaining(_ days: Int) -> Int {
-        // Find first schedule entry where daysRemaining >= actual days
-        for entry in deferralSchedule.sorted(by: { $0.daysRemaining > $1.daysRemaining }) {
-            if days <= entry.daysRemaining {
+        // Sort ascending and find first threshold that covers the remaining days
+        // e.g., 5 days remaining should use the 7-day threshold, not the 14-day threshold
+        for entry in deferralSchedule.sorted(by: { $0.daysRemaining < $1.daysRemaining }) {
+            if entry.daysRemaining >= days {
                 return entry.maxDeferrals
             }
         }
