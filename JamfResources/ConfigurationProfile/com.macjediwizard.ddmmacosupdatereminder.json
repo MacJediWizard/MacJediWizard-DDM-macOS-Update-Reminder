@@ -1,8 +1,8 @@
 {
   "title": "DDM macOS Update Reminder",
   "description": "Configuration for DDM macOS Update Reminder notifications. Deploy as External Application in Jamf Pro.",
-  "__version__": "1.0.0",
-  "__preferenceDomain__": "com.macjediwizard.ddmupdatereminder",
+  "__version__": "1.1.0",
+  "__preferenceDomain__": "com.macjediwizard.ddmmacosupdatereminder",
 
   "properties": {
 
@@ -34,7 +34,7 @@
           "title": "Management Directory",
           "description": "Base directory for management files",
           "type": "string",
-          "default": "/Library/Management"
+          "default": "/Library/Application Support"
         }
       }
     },
