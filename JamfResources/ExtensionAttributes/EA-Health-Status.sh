@@ -29,8 +29,8 @@ LAST_STATUS=$(/usr/libexec/PlistBuddy -c "Print :lastRunStatus" "${HEALTH_FILE}"
 CONFIG_DETECTED=$(/usr/libexec/PlistBuddy -c "Print :configProfileDetected" "${HEALTH_FILE}" 2>/dev/null)
 LAST_RUN=$(/usr/libexec/PlistBuddy -c "Print :lastRunDate" "${HEALTH_FILE}" 2>/dev/null)
 
-# Check for errors
-ERROR_COUNT=$(/usr/libexec/PlistBuddy -c "Print :errorLog" "${HEALTH_FILE}" 2>/dev/null | grep -c "^    " || echo "0")
+# Check for errors (grep -c returns 1 when no matches, so handle separately)
+ERROR_COUNT=$(/usr/libexec/PlistBuddy -c "Print :errorLog" "${HEALTH_FILE}" 2>/dev/null | grep -c "^    ") || ERROR_COUNT=0
 
 if [[ "${LAST_STATUS}" == "Success" ]] && [[ "${CONFIG_DETECTED}" == "true" ]]; then
     if [[ "${ERROR_COUNT}" -gt 0 ]]; then
