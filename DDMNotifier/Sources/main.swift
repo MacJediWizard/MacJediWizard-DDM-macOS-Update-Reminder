@@ -11,7 +11,7 @@
 import Foundation
 
 // MARK: - Version Info
-let appVersion = "1.0.5"
+let appVersion = "1.0.6"
 let appName = "DDMmacOSUpdateReminder"
 
 // MARK: - Main Entry Point
