@@ -11,6 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional customization options
 - Extended localization support
 
+## [1.1.1] - 2025-11-20
+
+### Fixed
+- **Test mode now skips meeting detection** - Test mode (via `--test` flag or `TestMode: true` in config) now bypasses meeting/assertion detection entirely
+- Users can now test dialogs immediately without needing to kill background apps (Zoho, Teams, screen sharing, etc.)
+- Added clear log message: "Test mode: skipping meeting/assertion checks"
+
+### Changed
+- Test mode behavior now matches debug mode for meeting detection
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
 ## [1.1.0] - 2025-11-20
 
 ### ⚠️ BREAKING CHANGES
