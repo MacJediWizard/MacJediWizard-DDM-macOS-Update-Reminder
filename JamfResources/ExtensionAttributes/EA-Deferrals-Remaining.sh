@@ -4,7 +4,7 @@
 # Returns: Number, "N/A" if no active enforcement, or "NotInstalled"
 
 # Preference domain - adjust if using custom domain
-PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
+PREF_DOMAIN="com.macjediwizard.ddmmacosupdatereminder"
 
 # Managed preferences file path
 MANAGED_PREFS="/Library/Managed Preferences/${PREF_DOMAIN}.plist"

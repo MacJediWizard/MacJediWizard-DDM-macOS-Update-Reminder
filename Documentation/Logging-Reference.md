@@ -185,13 +185,13 @@ log show --predicate "subsystem == '${SUBSYSTEM}' AND messageType == error" --la
 log show --predicate "subsystem == '${SUBSYSTEM}' AND category == 'userAction'" --last 30d > "${OUTPUT_DIR}/user-actions.log"
 
 # Health state
-HEALTH_FILE="/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
+HEALTH_FILE="/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/health.plist"
 if [[ -f "${HEALTH_FILE}" ]]; then
     cp "${HEALTH_FILE}" "${OUTPUT_DIR}/health-state.plist"
 fi
 
 # Deferral state
-DEFERRAL_FILE="/Library/Application Support/com.macjediwizard.ddmupdatereminder/deferral.plist"
+DEFERRAL_FILE="/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/deferral.plist"
 if [[ -f "${DEFERRAL_FILE}" ]]; then
     cp "${DEFERRAL_FILE}" "${OUTPUT_DIR}/deferral-state.plist"
 fi

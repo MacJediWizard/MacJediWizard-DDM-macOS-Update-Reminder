@@ -37,7 +37,7 @@ Relevant configuration settings (sanitize sensitive data):
 ## Logs
 Relevant log output:
 ```
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last 1h
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --last 1h
 ```
 
 ## Screenshots

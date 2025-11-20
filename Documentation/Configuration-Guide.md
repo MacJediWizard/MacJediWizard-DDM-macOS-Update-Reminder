@@ -15,8 +15,8 @@ All configuration is managed through Jamf Configuration Profiles using managed p
 3. Add payload: **Application & Custom Settings**
 4. Select **External Applications** > **Add**
 5. Choose **Custom Schema**
-6. Set **Preference Domain** to: `com.macjediwizard.ddmupdatereminder`
-7. Paste the contents of `JamfResources/ConfigurationProfile/com.macjediwizard.ddmupdatereminder.json`
+6. Set **Preference Domain** to: `com.macjediwizard.ddmmacosupdatereminder`
+7. Paste the contents of `JamfResources/ConfigurationProfile/com.macjediwizard.ddmmacosupdatereminder.json`
 8. Click **Add**
 9. Configure your organization's settings using the Jamf Pro UI
 10. Scope to target computers
@@ -25,7 +25,7 @@ All configuration is managed through Jamf Configuration Profiles using managed p
 
 The default preference domain is:
 ```
-com.macjediwizard.ddmupdatereminder
+com.macjediwizard.ddmmacosupdatereminder
 ```
 
 If using a custom domain, pass it as an argument when running the binary:

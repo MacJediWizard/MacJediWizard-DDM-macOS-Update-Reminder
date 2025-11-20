@@ -30,7 +30,7 @@ After deployment, files are located at:
 /Library/LaunchDaemons/{PreferenceDomain}.watcher.plist  # Watcher LaunchDaemon
 ```
 
-Where `{PreferenceDomain}` is `com.macjediwizard.ddmupdatereminder` by default.
+Where `{PreferenceDomain}` is `com.macjediwizard.ddmmacosupdatereminder` by default.
 
 ## Step 1: Deploy Configuration Profile
 
@@ -41,15 +41,15 @@ Where `{PreferenceDomain}` is `com.macjediwizard.ddmupdatereminder` by default.
 3. Add payload: **Application & Custom Settings**
 4. Select **External Applications** > **Add**
 5. Choose **Custom Schema**
-6. Set **Preference Domain** to: `com.macjediwizard.ddmupdatereminder`
-7. Paste the contents of `JamfResources/ConfigurationProfile/com.macjediwizard.ddmupdatereminder.json`
+6. Set **Preference Domain** to: `com.macjediwizard.ddmmacosupdatereminder`
+7. Paste the contents of `JamfResources/ConfigurationProfile/com.macjediwizard.ddmmacosupdatereminder.json`
 8. Click **Add**
 9. Configure your settings using the Jamf Pro UI
 10. Scope to target computers
 
 ### Option B: Manual Property List
 
-Create a Configuration Profile with Application & Custom Settings using preference domain `com.macjediwizard.ddmupdatereminder` and configure the settings manually.
+Create a Configuration Profile with Application & Custom Settings using preference domain `com.macjediwizard.ddmmacosupdatereminder` and configure the settings manually.
 
 ### Minimum Required Settings
 
@@ -93,7 +93,7 @@ Add this script to your Jamf policy:
 # Creates LaunchDaemon for scheduled execution
 
 BINARY="/usr/local/bin/DDMmacOSUpdateReminder"
-PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
+PREF_DOMAIN="com.macjediwizard.ddmmacosupdatereminder"
 
 # Verify binary exists
 if [[ ! -x "$BINARY" ]]; then
@@ -118,11 +118,11 @@ exit 0
 
 The `--setup` command creates two LaunchDaemons:
 
-1. **Main daemon** (`com.macjediwizard.ddmupdatereminder.plist`)
+1. **Main daemon** (`com.macjediwizard.ddmmacosupdatereminder.plist`)
    - Runs at times configured in your Configuration Profile
    - Displays the reminder dialog when DDM enforcement is active
 
-2. **Watcher daemon** (`com.macjediwizard.ddmupdatereminder.watcher.plist`)
+2. **Watcher daemon** (`com.macjediwizard.ddmmacosupdatereminder.watcher.plist`)
    - Runs every 15 minutes
    - Monitors for Configuration Profile schedule changes
    - Automatically updates the main daemon when schedule changes
@@ -142,8 +142,8 @@ This self-healing design means you only need to run `--setup` once during initia
 
 ```bash
 # Verify plists exist
-ls -la /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
-ls -la /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.watcher.plist
+ls -la /Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.plist
+ls -la /Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.watcher.plist
 
 # Verify daemons are loaded
 launchctl list | grep ddmupdatereminder
@@ -154,17 +154,17 @@ launchctl list | grep ddmupdatereminder
 
 ```bash
 # Read all settings
-defaults read com.macjediwizard.ddmupdatereminder
+defaults read com.macjediwizard.ddmmacosupdatereminder
 
 # Check specific setting
-defaults read com.macjediwizard.ddmupdatereminder ConfigVersion
+defaults read com.macjediwizard.ddmmacosupdatereminder ConfigVersion
 ```
 
 ### Test Run
 
 ```bash
 # Run with test mode (simulates DDM enforcement)
-sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --test
+sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmmacosupdatereminder --test
 ```
 
 ### Check Logs
@@ -231,7 +231,7 @@ For each Extension Attribute:
 # Returns: Healthy, ConfigMissing, Error: <details>, or NotInstalled
 
 # Preference domain - adjust if using custom domain
-PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
+PREF_DOMAIN="com.macjediwizard.ddmmacosupdatereminder"
 
 # Health state file path
 HEALTH_FILE="/Library/Application Support/${PREF_DOMAIN}/health.plist"
@@ -323,7 +323,7 @@ Create an uninstall policy with this script:
 # Uninstall DDMmacOSUpdateReminder
 
 BINARY="/usr/local/bin/DDMmacOSUpdateReminder"
-PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
+PREF_DOMAIN="com.macjediwizard.ddmmacosupdatereminder"
 SUPPORT_DIR="/Library/Application Support/${PREF_DOMAIN}"
 DAEMON_PLIST="/Library/LaunchDaemons/${PREF_DOMAIN}.plist"
 WATCHER_PLIST="/Library/LaunchDaemons/${PREF_DOMAIN}.watcher.plist"
@@ -353,7 +353,7 @@ DDMmacOSUpdateReminder --domain <preference.domain> [options]
 
 Required:
   --domain <domain>    Preference domain for managed preferences
-                       (e.g., com.macjediwizard.ddmupdatereminder)
+                       (e.g., com.macjediwizard.ddmmacosupdatereminder)
 
 Options:
   --setup              Create/update LaunchDaemons (main + watcher) and exit
@@ -364,9 +364,9 @@ Options:
   --help, -h           Print this help message
 
 Examples:
-  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder
-  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
-  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --test
+  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmmacosupdatereminder
+  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmmacosupdatereminder --setup
+  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmmacosupdatereminder --test
 ```
 
 ## Troubleshooting
@@ -392,7 +392,7 @@ Examples:
 
 2. Check defaults:
    ```bash
-   defaults read com.macjediwizard.ddmupdatereminder
+   defaults read com.macjediwizard.ddmmacosupdatereminder
    ```
 
 ### Dialog Not Appearing

@@ -36,8 +36,8 @@ This tool uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to disp
 2. Add payload: **Application & Custom Settings**
 3. Select **External Applications > Add**
 4. Choose **Custom Schema**
-5. Set **Preference Domain**: `com.macjediwizard.ddmupdatereminder`
-6. Paste the JSON schema from `JamfResources/ConfigurationProfile/com.macjediwizard.ddmupdatereminder.json`
+5. Set **Preference Domain**: `com.macjediwizard.ddmmacosupdatereminder`
+6. Paste the JSON schema from `JamfResources/ConfigurationProfile/com.macjediwizard.ddmmacosupdatereminder.json`
 7. Configure your settings and scope to computers
 
 ### 2. Deploy Package
@@ -50,7 +50,7 @@ Upload to Jamf Pro and create a policy with a post-install script:
 
 ```bash
 #!/bin/zsh
-/usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
+/usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmmacosupdatereminder --setup
 ```
 
 This creates two LaunchDaemons: the main reminder daemon and a watcher daemon that automatically syncs schedule changes from your Configuration Profile.
@@ -65,7 +65,7 @@ This creates two LaunchDaemons: the main reminder daemon and a watcher daemon th
 launchctl list | grep ddmupdatereminder
 
 # Test with simulated enforcement
-sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --test
+sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmmacosupdatereminder --test
 ```
 
 See the [Deployment Guide](Documentation/Deployment-Guide.md) for complete instructions.
@@ -75,12 +75,12 @@ See the [Deployment Guide](Documentation/Deployment-Guide.md) for complete instr
 ```
 /usr/local/bin/DDMmacOSUpdateReminder                              # Binary
 
-/Library/Application Support/com.macjediwizard.ddmupdatereminder/
+/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/
 ├── deferral.plist                                                 # Deferral state
 └── health.plist                                                   # Health state for EAs
 
-/Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist          # Main LaunchDaemon
-/Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.watcher.plist  # Watcher LaunchDaemon
+/Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.plist          # Main LaunchDaemon
+/Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.watcher.plist  # Watcher LaunchDaemon
 ```
 
 ## Configuration

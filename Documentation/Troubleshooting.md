@@ -17,7 +17,7 @@ ls -la /usr/local/bin/DDMmacOSUpdateReminder
 launchctl list | grep ddmupdatereminder
 
 # Check config profile
-defaults read com.macjediwizard.ddmupdatereminder ConfigVersion
+defaults read com.macjediwizard.ddmmacosupdatereminder ConfigVersion
 
 # Check recent logs
 log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' --last 1h
@@ -66,7 +66,7 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' -
 
 2. Check preference domain:
    ```bash
-   defaults read com.macjediwizard.ddmupdatereminder
+   defaults read com.macjediwizard.ddmmacosupdatereminder
    ```
 
 3. Ensure profile is scoped to computer, not user
@@ -89,22 +89,22 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' -
 
 2. Verify plist exists:
    ```bash
-   ls -la /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
+   ls -la /Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.plist
    ```
 
 3. Check plist syntax:
    ```bash
-   plutil -lint /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
+   plutil -lint /Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.plist
    ```
 
 4. Run setup to create LaunchDaemon:
    ```bash
-   sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
+   sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmmacosupdatereminder --setup
    ```
 
 5. Manually load:
    ```bash
-   sudo launchctl bootstrap system /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
+   sudo launchctl bootstrap system /Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.plist
    ```
 
 6. Check for errors:
@@ -145,12 +145,12 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' -
 
 1. Check deferral file:
    ```bash
-   /usr/libexec/PlistBuddy -c "Print" "/Library/Application Support/com.macjediwizard.ddmupdatereminder/deferral.plist"
+   /usr/libexec/PlistBuddy -c "Print" "/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/deferral.plist"
    ```
 
 2. Check permissions:
    ```bash
-   ls -la "/Library/Application Support/com.macjediwizard.ddmupdatereminder/"
+   ls -la "/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/"
    ```
 
 3. Verify deadline hasn't changed:
@@ -204,12 +204,12 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' -
 
 2. Check health file permissions:
    ```bash
-   ls -la "/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
+   ls -la "/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/health.plist"
    ```
 
 3. Read health file:
    ```bash
-   /usr/libexec/PlistBuddy -c "Print" "/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
+   /usr/libexec/PlistBuddy -c "Print" "/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/health.plist"
    ```
 
 4. Trigger inventory update in Jamf
@@ -239,26 +239,26 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AN
 ### Reset Deferrals
 
 ```bash
-sudo rm "/Library/Application Support/com.macjediwizard.ddmupdatereminder/deferral.plist"
+sudo rm "/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/deferral.plist"
 ```
 
 ### Reset Health State
 
 ```bash
-sudo rm "/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
+sudo rm "/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder/health.plist"
 ```
 
 ### Complete Reset
 
 ```bash
 # Unload daemon
-sudo launchctl bootout system /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
+sudo launchctl bootout system /Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.plist
 
 # Remove all state files
-sudo rm -rf "/Library/Application Support/com.macjediwizard.ddmupdatereminder"
+sudo rm -rf "/Library/Application Support/com.macjediwizard.ddmmacosupdatereminder"
 
 # Reload daemon
-sudo launchctl bootstrap system /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
+sudo launchctl bootstrap system /Library/LaunchDaemons/com.macjediwizard.ddmmacosupdatereminder.plist
 ```
 
 ## Test Mode
@@ -274,7 +274,7 @@ Enable test mode for debugging:
 
 2. Run manually:
    ```bash
-   sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --test
+   sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmmacosupdatereminder --test
    ```
 
 3. Stream logs in another terminal:
