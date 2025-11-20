@@ -14,6 +14,7 @@ import Foundation
 enum DialogResult {
     case openSoftwareUpdate
     case deferred
+    case snoozed
     case info
     case timeout
     case error(String)
@@ -99,6 +100,10 @@ class DialogController {
         process.executableURL = URL(fileURLWithPath: dialogBinary)
         process.arguments = arguments
 
+        // Capture stdout for JSON output
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+
         do {
             try process.run()
             process.waitUntilExit()
@@ -106,7 +111,11 @@ class DialogController {
             let exitCode = process.terminationStatus
             Logger.shared.dialog("Dialog exit code: \(exitCode)")
 
-            return interpretExitCode(Int(exitCode))
+            // Read output
+            let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: outputData, encoding: .utf8) ?? ""
+
+            return interpretResult(exitCode: Int(exitCode), output: output)
         } catch {
             Logger.shared.error("Failed to run dialog: \(error.localizedDescription)")
             return .error(error.localizedDescription)
@@ -177,9 +186,24 @@ class DialogController {
             args += ["--button1actioncolor", branding.button1Color]
         }
 
-        // Button 2 (defer/remind later)
+        // Button 2 (defer/remind later/snooze)
         if !isExhausted {
-            args += ["--button2text", configuration.dialogContent.button2Text]
+            // Add dropdown for snooze vs defer when snooze is enabled
+            if configuration.deferralSettings.snoozeEnabled {
+                let snoozeMinutes = configuration.deferralSettings.snoozeMinutes
+                let snoozeOption = "Snooze (\(snoozeMinutes) min) - doesn't use a deferral"
+                let deferOption = "Remind Me Later - uses 1 of \(deferralsRemaining) deferrals"
+
+                args += ["--selecttitle", "Choose Action:"]
+                args += ["--selectvalues", "\(snoozeOption),\(deferOption)"]
+                args += ["--selectdefault", deferOption]
+
+                // Button 2 confirms the selection
+                args += ["--button2text", "Confirm"]
+            } else {
+                args += ["--button2text", configuration.dialogContent.button2Text]
+            }
+
             if !branding.button2Color.isEmpty {
                 args += ["--button2actioncolor", branding.button2Color]
             }
@@ -188,6 +212,9 @@ class DialogController {
             args += ["--button2text", configuration.dialogContent.button2TextExhausted]
             args += ["--button2disabled"]
         }
+
+        // Enable JSON output to capture dropdown selection
+        args += ["--jsonoutput"]
 
         // Info button (for help) - only set text if not empty, otherwise swiftDialog shows "?" icon
         if !configuration.dialogContent.infoButtonText.isEmpty {
@@ -343,13 +370,27 @@ class DialogController {
         return result
     }
 
-    // MARK: - Exit Code Interpretation
+    // MARK: - Result Interpretation
 
-    private func interpretExitCode(_ code: Int) -> DialogResult {
-        switch code {
+    private func interpretResult(exitCode: Int, output: String) -> DialogResult {
+        switch exitCode {
         case 0:
             return .openSoftwareUpdate
         case 2:
+            // Button 2 clicked - check if snooze or defer was selected
+            if configuration.deferralSettings.snoozeEnabled {
+                // Parse JSON output to find selected option
+                if let data = output.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let selectedOption = json["SelectedOption"] as? String {
+                    Logger.shared.dialog("Selected option: \(selectedOption)")
+
+                    // Check if snooze was selected (contains "Snooze")
+                    if selectedOption.lowercased().contains("snooze") {
+                        return .snoozed
+                    }
+                }
+            }
             return .deferred
         case 3:
             return .info
@@ -359,7 +400,7 @@ class DialogController {
             Logger.shared.dialog("User has Do Not Disturb enabled")
             return .timeout
         default:
-            return .error("Unknown exit code: \(code)")
+            return .error("Unknown exit code: \(exitCode)")
         }
     }
 

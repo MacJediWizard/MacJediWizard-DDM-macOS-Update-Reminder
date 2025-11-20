@@ -11,7 +11,7 @@
 import Foundation
 
 // MARK: - Version Info
-let appVersion = "1.0.4"
+let appVersion = "1.0.5"
 let appName = "DDMmacOSUpdateReminder"
 
 // MARK: - Main Entry Point
@@ -492,6 +492,16 @@ class DDMUpdateReminderApp {
                 enforcement: enforcement,
                 deferralManager: deferralManager,
                 userAction: "Deferred"
+            )
+
+        case .snoozed:
+            Logger.shared.userAction("User selected: Snooze")
+            deferralManager.recordSnooze()
+            healthReporter?.updateHealthState(
+                status: .success,
+                enforcement: enforcement,
+                deferralManager: deferralManager,
+                userAction: "Snoozed"
             )
 
         case .info:
