@@ -561,7 +561,7 @@ class DialogController {
         let tempPkg = "/var/tmp/dialog.pkg"
         let downloadProcess = Process()
         downloadProcess.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        downloadProcess.arguments = ["-L", "-s", "-o", tempPkg, pkgURL]
+        downloadProcess.arguments = ["-L", "-s", "-o", tempPkg, "--max-time", "120", pkgURL]
 
         do {
             try downloadProcess.run()

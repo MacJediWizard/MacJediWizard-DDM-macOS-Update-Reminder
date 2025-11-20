@@ -340,7 +340,7 @@ class DDMUpdateReminderApp {
         }
 
         // Check display assertions (meetings/presentations)
-        let hoursUntilDeadline = daysRemaining * 24
+        let hoursUntilDeadline = enforcement.hoursRemaining
         if hoursUntilDeadline > config.behaviorSettings.ignoreAssertionsWithinHours {
             let meetingWaitResult = waitForMeetingToEnd(config: config)
             if !meetingWaitResult {
