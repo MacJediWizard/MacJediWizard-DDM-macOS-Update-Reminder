@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional customization options
 - Extended localization support
 
+## [1.1.0] - 2025-11-20
+
+### ⚠️ BREAKING CHANGES
+- **Preference domain updated** from `com.macjediwizard.ddmupdatereminder` to `com.macjediwizard.ddmmacosupdatereminder`
+- Resolves inconsistency between preference domain and logger subsystem (issue #36)
+- **Migration required**: Update all Configuration Profiles to use new preference domain
+- State files (deferrals, health) will not migrate automatically and will reset
+
+### Changed
+- Updated preference domain in all Extension Attributes (4 files)
+- Renamed JSON schema file to `com.macjediwizard.ddmmacosupdatereminder.json`
+- Updated all documentation (README, Configuration Guide, Deployment Guide, Troubleshooting, Logging Reference, Bug Report template)
+- Updated main.swift default preference domain
+
+### Migration Guide
+1. Update Configuration Profile preference domain in Jamf Pro
+2. Update Custom Schema JSON file reference
+3. Update deployment policy post-install script to use new domain
+4. Redeploy to all managed machines
+5. See release notes for complete migration instructions
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
 ## [1.0.6] - 2025-11-20
 
 ### Added
