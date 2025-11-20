@@ -315,12 +315,23 @@ class DDMUpdateReminderApp {
             return 0
         }
 
+        // Check if test mode is enabled (command-line or config)
+        let isTestMode = testMode || config.advancedSettings.testMode
+
+        // Use testDaysRemaining if in config test mode, otherwise actual days
+        let daysRemaining = config.advancedSettings.testMode
+            ? config.advancedSettings.testDaysRemaining
+            : enforcement.daysRemaining
+
         // Check if within reminder window (or test mode)
-        let daysRemaining = enforcement.daysRemaining
-        if !testMode && daysRemaining > config.behaviorSettings.daysBeforeDeadlineDisplayReminder {
+        if !isTestMode && daysRemaining > config.behaviorSettings.daysBeforeDeadlineDisplayReminder {
             Logger.shared.info("Outside reminder window (\(daysRemaining) days > \(config.behaviorSettings.daysBeforeDeadlineDisplayReminder))")
             healthReporter?.updateHealthState(status: .success, userAction: "Outside window")
             return 0
+        }
+
+        if config.advancedSettings.testMode {
+            Logger.shared.info("Config test mode enabled - using testDaysRemaining: \(daysRemaining)")
         }
 
         // Check deferral state

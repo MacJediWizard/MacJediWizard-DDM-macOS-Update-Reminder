@@ -317,7 +317,7 @@ struct DialogContent {
     let button1Text: String
     let button2Text: String
     let button2TextExhausted: String
-    let snoozeButtonText: String
+    let snoozeButtonText: String  // Reserved for future use - snooze currently via timeout
     let infoButtonText: String
     let messageTemplate: String
     let messageTemplateExhausted: String

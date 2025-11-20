@@ -118,7 +118,10 @@ class DialogController {
     private func buildDialogArguments() -> [String] {
         var args: [String] = []
 
-        let daysRemaining = enforcement.daysRemaining
+        // Use testDaysRemaining if config test mode is enabled
+        let daysRemaining = configuration.advancedSettings.testMode
+            ? configuration.advancedSettings.testDaysRemaining
+            : enforcement.daysRemaining
         let deferralsRemaining = deferralManager.deferralsRemaining(forDaysRemaining: daysRemaining)
         let isExhausted = deferralsRemaining <= 0
 
@@ -128,10 +131,18 @@ class DialogController {
             : configuration.dialogContent.titleUpdate
         args += ["--title", title]
 
-        // Message
-        let messageTemplate = isExhausted
-            ? configuration.dialogContent.messageTemplateExhausted
-            : configuration.dialogContent.messageTemplate
+        // Message - check for version-specific message first
+        var messageTemplate: String
+        if isExhausted {
+            messageTemplate = configuration.dialogContent.messageTemplateExhausted
+        } else if let versionMessages = configuration.dialogContent.perVersionMessages[enforcement.targetVersion],
+                  let customMessage = versionMessages["message"] {
+            // Use version-specific message
+            messageTemplate = customMessage
+            Logger.shared.dialog("Using version-specific message for \(enforcement.targetVersion)")
+        } else {
+            messageTemplate = configuration.dialogContent.messageTemplate
+        }
         let message = substituteVariables(in: messageTemplate)
         args += ["--message", message]
 
@@ -166,12 +177,16 @@ class DialogController {
             args += ["--button1actioncolor", branding.button1Color]
         }
 
-        // Button 2 (defer/remind later) - only if deferrals remaining
+        // Button 2 (defer/remind later)
         if !isExhausted {
             args += ["--button2text", configuration.dialogContent.button2Text]
             if !branding.button2Color.isEmpty {
                 args += ["--button2actioncolor", branding.button2Color]
             }
+        } else {
+            // Show disabled button with exhausted text
+            args += ["--button2text", configuration.dialogContent.button2TextExhausted]
+            args += ["--button2disabled"]
         }
 
         // Info button (for help)
@@ -253,7 +268,10 @@ class DialogController {
     private func substituteVariables(in template: String) -> String {
         var result = template
 
-        let daysRemaining = enforcement.daysRemaining
+        // Use testDaysRemaining if config test mode is enabled
+        let daysRemaining = configuration.advancedSettings.testMode
+            ? configuration.advancedSettings.testDaysRemaining
+            : enforcement.daysRemaining
         let deferralsRemaining = deferralManager.deferralsRemaining(forDaysRemaining: daysRemaining)
         let maxDeferrals = deferralManager.maxDeferralsAtThreshold(forDaysRemaining: daysRemaining)
 
