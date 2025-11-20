@@ -47,7 +47,7 @@ Files are stored at `{ManagementDirectory}/{PreferenceDomain}/`:
 - `health.plist` - Health state for Extension Attributes
 - `deferral.plist` - Deferral tracking state
 
-> **Note**: The Extension Attributes currently use the default path. If you set a custom ManagementDirectory, update the `HEALTH_FILE` path in each EA script.
+The Extension Attributes automatically read this setting from the Configuration Profile.
 
 ### Behavior Settings
 

@@ -6,8 +6,17 @@
 # Preference domain - adjust if using custom domain
 PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
 
-# Health state file path (in /Library/Application Support/{preferenceDomain}/)
-HEALTH_FILE="/Library/Application Support/${PREF_DOMAIN}/health.plist"
+# Managed preferences file path
+MANAGED_PREFS="/Library/Managed Preferences/${PREF_DOMAIN}.plist"
+
+# Get ManagementDirectory from config (default: /Library/Application Support)
+MGMT_DIR=$(/usr/libexec/PlistBuddy -c "Print :ManagementDirectory" "${MANAGED_PREFS}" 2>/dev/null)
+if [[ -z "${MGMT_DIR}" ]]; then
+    MGMT_DIR="/Library/Application Support"
+fi
+
+# Health state file path
+HEALTH_FILE="${MGMT_DIR}/${PREF_DOMAIN}/health.plist"
 
 # Check if health file exists
 if [[ ! -f "${HEALTH_FILE}" ]]; then
