@@ -11,7 +11,7 @@
 import Foundation
 
 // MARK: - Version Info
-let appVersion = "1.1.0"
+let appVersion = "1.1.1"
 let appName = "DDMmacOSUpdateReminder"
 
 // MARK: - Main Entry Point
@@ -442,9 +442,13 @@ class DDMUpdateReminderApp {
             return 0
         }
 
-        // Check display assertions (meetings/presentations) - skip in debug mode
-        if debugMode {
-            Logger.shared.info("Debug mode: skipping meeting/assertion checks")
+        // Check display assertions (meetings/presentations) - skip in debug/test mode
+        if debugMode || testMode {
+            if debugMode {
+                Logger.shared.info("Debug mode: skipping meeting/assertion checks")
+            } else {
+                Logger.shared.info("Test mode: skipping meeting/assertion checks")
+            }
         } else {
             let hoursUntilDeadline = enforcement.hoursRemaining
             if hoursUntilDeadline > config.behaviorSettings.ignoreAssertionsWithinHours {
