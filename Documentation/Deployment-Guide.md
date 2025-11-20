@@ -196,7 +196,9 @@ If you prefer to manage swiftDialog separately:
 
 ## Extension Attributes
 
-Create Extension Attributes in Jamf Pro for monitoring. Scripts are in `JamfResources/ExtensionAttributes/`:
+Create Extension Attributes in Jamf Pro for monitoring. Scripts are in `JamfResources/ExtensionAttributes/`.
+
+### Available Extension Attributes
 
 | Extension Attribute | Script | Data Type | Description |
 |---------------------|--------|-----------|-------------|
@@ -206,13 +208,97 @@ Create Extension Attributes in Jamf Pro for monitoring. Scripts are in `JamfReso
 | Enforcement Deadline | `EA-Enforcement-Deadline.sh` | String | DDM deadline date |
 | User Actions | `EA-User-Actions.sh` | String | Last user action taken |
 
-### Update Extension Attribute Paths
+### Creating Extension Attributes in Jamf Pro
 
-The Extension Attribute scripts need the correct path. Update them to use:
+For each Extension Attribute:
+
+1. In Jamf Pro, go to **Settings > Computer Management > Extension Attributes**
+2. Click **New**
+3. Configure:
+   - **Display Name**: Use the name from the table above (e.g., "DDM Reminder - Health Status")
+   - **Description**: (Optional) Add description from table
+   - **Data Type**: String
+   - **Inventory Display**: General or your preferred section
+   - **Input Type**: Script
+4. Paste the contents of the corresponding `.sh` file from `JamfResources/ExtensionAttributes/`
+5. Click **Save**
+
+### Example: Health Status EA
 
 ```bash
-HEALTH_FILE="/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
+#!/bin/zsh
+# Extension Attribute: DDM Update Reminder - Health Status
+# Reports the health status of DDM macOS Update Reminder
+# Returns: Healthy, ConfigMissing, Error: <details>, or NotInstalled
+
+# Preference domain - adjust if using custom domain
+PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
+
+# Health state file path
+HEALTH_FILE="/Library/Application Support/${PREF_DOMAIN}/health.plist"
+
+# Check if configuration profile exists
+CONFIG_EXISTS=$(defaults read "${PREF_DOMAIN}" ConfigVersion 2>/dev/null)
+
+if [[ -z "${CONFIG_EXISTS}" ]]; then
+    echo "<result>ConfigMissing</result>"
+    exit 0
+fi
+
+# Check if health file exists
+if [[ ! -f "${HEALTH_FILE}" ]]; then
+    echo "<result>NotInstalled</result>"
+    exit 0
+fi
+
+# Read health status
+LAST_STATUS=$(/usr/libexec/PlistBuddy -c "Print :LastRunStatus" "${HEALTH_FILE}" 2>/dev/null)
+CONFIG_DETECTED=$(/usr/libexec/PlistBuddy -c "Print :ConfigProfileDetected" "${HEALTH_FILE}" 2>/dev/null)
+
+# Check for errors
+ERROR_COUNT=$(/usr/libexec/PlistBuddy -c "Print :ErrorLog" "${HEALTH_FILE}" 2>/dev/null | grep -c "^    " || echo "0")
+
+if [[ "${LAST_STATUS}" == "Success" ]] && [[ "${CONFIG_DETECTED}" == "true" ]]; then
+    if [[ "${ERROR_COUNT}" -gt 0 ]]; then
+        echo "<result>Healthy (${ERROR_COUNT} warnings)</result>"
+    else
+        echo "<result>Healthy</result>"
+    fi
+elif [[ "${CONFIG_DETECTED}" != "true" ]]; then
+    echo "<result>Error: Config profile not detected</result>"
+elif [[ -n "${LAST_STATUS}" ]]; then
+    echo "<result>Error: ${LAST_STATUS}</result>"
+else
+    echo "<result>Unknown</result>"
+fi
 ```
+
+### Custom Preference Domain
+
+If using a custom preference domain, update the `PREF_DOMAIN` variable in each EA script:
+
+```bash
+PREF_DOMAIN="com.yourcompany.ddmupdatereminder"
+```
+
+### Creating Smart Groups
+
+Use Extension Attributes to create Smart Groups for targeting:
+
+**Example: Computers with depleted deferrals**
+- Extension Attribute: "DDM Reminder - Deferrals Remaining"
+- Operator: like
+- Value: "0 of"
+
+**Example: Computers with errors**
+- Extension Attribute: "DDM Reminder - Health Status"
+- Operator: like
+- Value: "Error"
+
+**Example: Computers not installed**
+- Extension Attribute: "DDM Reminder - Health Status"
+- Operator: is
+- Value: "NotInstalled"
 
 ## Updating
 
