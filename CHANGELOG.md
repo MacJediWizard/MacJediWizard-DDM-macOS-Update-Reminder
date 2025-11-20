@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional customization options
 - Extended localization support
 
+## [1.0.1] - 2025-11-19
+
+### Added
+- **Self-healing watcher daemon** - Automatically syncs LaunchDaemon schedule when Configuration Profile changes
+- New `--sync-check` command-line flag for schedule synchronization
+- Watcher daemon runs every 15 minutes to detect configuration changes
+
+### Changed
+- `--setup` now creates two LaunchDaemons:
+  - Main daemon for scheduled reminders
+  - Watcher daemon for automatic schedule sync
+- Updated documentation throughout for watcher daemon feature
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
 ## [1.0.0] - 2025-11-19
 
 ### Added
