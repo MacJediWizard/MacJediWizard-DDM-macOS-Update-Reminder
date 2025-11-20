@@ -59,7 +59,7 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
 ## Testing
 
 - Test on both Apple Silicon and Intel Macs
-- Test with various macOS versions (13+)
+- Test with various macOS versions (12.0+)
 - Test configuration edge cases
 - Verify logging output
 

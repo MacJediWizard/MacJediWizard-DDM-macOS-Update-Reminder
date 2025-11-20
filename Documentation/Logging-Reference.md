@@ -105,7 +105,7 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --star
 ### Process-Specific
 
 ```bash
-log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND process == "ddm-update-reminder"' --last 24h
+log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND process == "DDMmacOSUpdateReminder"' --last 24h
 ```
 
 ## Output Formats
@@ -183,13 +183,13 @@ log show --predicate "subsystem == '${SUBSYSTEM}' AND messageType == error" --la
 log show --predicate "subsystem == '${SUBSYSTEM}' AND category == 'userAction'" --last 30d > "${OUTPUT_DIR}/user-actions.log"
 
 # Health state
-HEALTH_FILE="/Library/Management/com.yourorg/ddm-health.plist"
+HEALTH_FILE="/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
 if [[ -f "${HEALTH_FILE}" ]]; then
     cp "${HEALTH_FILE}" "${OUTPUT_DIR}/health-state.plist"
 fi
 
 # Deferral state
-DEFERRAL_FILE="/Library/Management/com.yourorg/ddm-deferral.plist"
+DEFERRAL_FILE="/Library/Application Support/com.macjediwizard.ddmupdatereminder/deferral.plist"
 if [[ -f "${DEFERRAL_FILE}" ]]; then
     cp "${DEFERRAL_FILE}" "${OUTPUT_DIR}/deferral-state.plist"
 fi

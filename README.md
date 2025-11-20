@@ -8,7 +8,7 @@ While Apple's Declarative Device Management (DDM) provides Mac Admins a powerful
 
 ### Key Features
 
-- **Configuration Profile Driven**: All settings managed via Jamf Configuration Profiles (JSON)
+- **Configuration Profile Driven**: All settings managed via Jamf Configuration Profiles
 - **Deploy Once**: Binary reads configuration from managed preferences - no script redeployment needed
 - **Flexible Deferrals**: Configurable deferral limits that decrease as deadline approaches
 - **Snooze Support**: Optional short-term snooze separate from deferrals
@@ -16,68 +16,70 @@ While Apple's Declarative Device Management (DDM) provides Mac Admins a powerful
 - **Health Monitoring**: Extension Attributes report configuration status and errors
 - **Self-Managing LaunchDaemon**: Binary creates and manages its own LaunchDaemon
 - **Unified Logging**: Native macOS logging with customizable predicates
-- **Multi-Entity Support**: Single binary supports multiple organizations via domain argument
-
-## Architecture
-
-```
-Jamf Configuration Profile (Managed Preferences):
-└── com.macjediwizard.ddmupdatereminder    # All configuration settings
-
-/usr/local/bin/
-└── DDMmacOSUpdateReminder                 # Signed binary
-
-/Library/Application Support/com.macjediwizard.ddmupdatereminder/
-├── deferral.plist                         # Deferral state tracking
-└── health.plist                           # Health state for EAs
-
-/Library/LaunchDaemons/
-└── com.macjediwizard.ddmupdatereminder.plist  # Created by --setup
-```
-
-> **Note**: All configuration is stored in managed preferences via your Jamf Configuration Profile. The binary reads settings using the `--domain` argument. After installing the package, run `--setup` to create the LaunchDaemon.
 
 ## Requirements
 
 - macOS 12.0 (Monterey) or later
-- Jamf Pro (or compatible MDM for managed preferences)
+- Jamf Pro (or compatible MDM)
 - Apple Silicon or Intel Mac
 
 ### swiftDialog Dependency
 
-This tool uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to display notification windows. You have two options:
+This tool uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to display notification windows. Enable `SwiftDialogAutoInstall` in your Configuration Profile and the binary will automatically download and install swiftDialog on first run.
 
-1. **Auto-Install (Recommended)**: Enable `SwiftDialogAutoInstall` in your Configuration Profile and the binary will automatically download and install swiftDialog on first run
-2. **Pre-Deploy**: Deploy swiftDialog 2.4.0+ separately via Jamf before deploying this tool
+## Quick Start
 
-## Installation
+### 1. Create Configuration Profile in Jamf Pro
 
-### 1. Deploy Configuration Profile
-
-Upload the JSON manifest to Jamf Pro as an External Application and configure your settings.
-
-See [JamfResources/ConfigurationProfile/](JamfResources/ConfigurationProfile/) for the manifest.
+1. Go to **Computers > Configuration Profiles > New**
+2. Add payload: **Application & Custom Settings**
+3. Select **External Applications > Add**
+4. Choose **Custom Schema**
+5. Set **Preference Domain**: `com.macjediwizard.ddmupdatereminder`
+6. Paste the JSON schema from `JamfResources/ConfigurationProfile/com.macjediwizard.ddmupdatereminder.json`
+7. Configure your settings and scope to computers
 
 ### 2. Deploy Package
 
-Download the signed and notarized installer package from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases):
+Download from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases):
 
-- **DDMmacOSUpdateReminder-1.0.0.pkg** - Installs binary to `/usr/local/bin/`
+- **DDMmacOSUpdateReminder-1.0.0.pkg**
 
-Deploy via Jamf Pro with a post-install script to run setup:
+Upload to Jamf Pro and create a policy with a post-install script:
 
 ```bash
+#!/bin/zsh
 /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
 ```
 
-### 3. Initial Run
+This creates the LaunchDaemon that runs the reminder at scheduled times.
 
-The binary will:
-- Read configuration from managed preferences
-- Create its LaunchDaemon at `/Library/LaunchDaemons/`
-- Begin monitoring for DDM enforcement deadlines
+### 3. Verify Installation
+
+```bash
+# Check binary
+/usr/local/bin/DDMmacOSUpdateReminder --version
+
+# Check LaunchDaemon
+launchctl list | grep ddmupdatereminder
+
+# Test with simulated enforcement
+sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --test
+```
 
 See the [Deployment Guide](Documentation/Deployment-Guide.md) for complete instructions.
+
+## File Locations
+
+```
+/usr/local/bin/DDMmacOSUpdateReminder                              # Binary
+
+/Library/Application Support/com.macjediwizard.ddmupdatereminder/
+├── deferral.plist                                                 # Deferral state
+└── health.plist                                                   # Health state for EAs
+
+/Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist   # LaunchDaemon
+```
 
 ## Configuration
 
@@ -85,12 +87,11 @@ All configuration is managed through Jamf Configuration Profiles. See the [Confi
 
 ### Key Configuration Areas
 
-- **Organization Settings**: Domain name, management directory, logging
-- **Behavior Settings**: Reminder timing, meeting delays, assertion handling
+- **Behavior Settings**: Reminder timing, meeting delays
 - **Deferral Settings**: Max deferrals, schedule, snooze options
 - **Schedule Settings**: LaunchDaemon run times
-- **Branding Settings**: Icons, overlay images
-- **Support Settings**: Contact information, KB articles
+- **Branding Settings**: Icons, colors, window size
+- **Support Settings**: Contact information
 - **Dialog Content**: Message templates with variables
 
 ### Message Template Variables
@@ -100,75 +101,42 @@ Templates support variables like:
 - `{installedVersion}`, `{targetVersion}`
 - `{deadlineFormatted}`, `{daysRemaining}`
 - `{deferralsRemaining}`, `{maxDeferrals}`
-- And many more...
 
-See [Documentation/Configuration-Guide.md](Documentation/Configuration-Guide.md) for the complete list.
+See [Configuration Guide](Documentation/Configuration-Guide.md) for the complete list.
 
 ## Extension Attributes
 
-Health monitoring Extension Attributes are provided:
+Health monitoring Extension Attributes are provided in `JamfResources/ExtensionAttributes/`:
 
-- **Health Status**: Configuration profile detection and validity
-- **Deferrals Remaining**: Current deferral count
-- **Last Run Status**: Success/error with details
-
-See [JamfResources/ExtensionAttributes/](JamfResources/ExtensionAttributes/)
+- **Health Status**: Overall configuration and run status
+- **Deferrals Remaining**: User's remaining deferral count
+- **Last Run Status**: Result of last execution
+- **Enforcement Deadline**: DDM deadline date
+- **User Actions**: Last user action taken
 
 ## Logging
 
-Uses macOS Unified Logging. View logs with:
+Uses macOS Unified Logging:
 
 ```bash
 # All logs
-log show --predicate 'subsystem == "com.yourorg.ddmupdatereminder"' --last 1h
+log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last 1h
 
 # Errors only
-log show --predicate 'subsystem == "com.yourorg.ddmupdatereminder" AND messageType == error' --last 24h
+log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND messageType == error' --last 24h
 
 # Real-time streaming
-log stream --predicate 'subsystem == "com.yourorg.ddmupdatereminder"' --level debug
+log stream --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --level debug
 ```
 
-See [Documentation/Logging-Reference.md](Documentation/Logging-Reference.md) for complete predicates.
+See [Logging Reference](Documentation/Logging-Reference.md) for complete predicates.
 
-## Development
+## Documentation
 
-> **Note**: Most users should download the pre-built, signed binary from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases). Building from source is only necessary for contributors or custom modifications.
-
-### Building from Source
-
-Requires Xcode 15+ and macOS 14+.
-
-```bash
-# Using Xcode project
-xcodebuild -project DDMmacOSUpdateReminder.xcodeproj \
-  -scheme DDMmacOSUpdateReminder \
-  -configuration Release \
-  build
-
-# Or using Swift Package Manager
-cd DDMNotifier
-swift build -c release
-```
-
-### Testing in Xcode
-
-The Xcode project includes a debug mode for testing without root privileges:
-
-1. Open `DDMmacOSUpdateReminder.xcodeproj` in Xcode
-2. The scheme is pre-configured with `--domain`, `--test`, and `--debug` arguments
-3. Install test configuration: copy `DDMNotifier/Resources/TestConfiguration.plist` to `~/Library/Preferences/com.macjediwizard.ddmupdatereminder.plist`
-4. Build and run (⌘R)
-
-The `--debug` flag skips root check, health reporting, and meeting detection for development testing.
-
-### Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## License
-
-MIT License - See [LICENSE](LICENSE)
+- [Deployment Guide](Documentation/Deployment-Guide.md) - Complete deployment instructions
+- [Configuration Guide](Documentation/Configuration-Guide.md) - All configuration options
+- [Troubleshooting](Documentation/Troubleshooting.md) - Common issues and solutions
+- [Logging Reference](Documentation/Logging-Reference.md) - Log analysis
 
 ## Support
 
@@ -176,6 +144,10 @@ MIT License - See [LICENSE](LICENSE)
 - **Discussions**: [GitHub Discussions](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/discussions)
 - **Mac Admins Slack**: #ddm-os-reminders
 
-## Roadmap
+## Contributing
 
-See [GitHub Issues](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/issues) for planned features and known issues.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+
+## License
+
+MIT License - See [LICENSE](LICENSE)
