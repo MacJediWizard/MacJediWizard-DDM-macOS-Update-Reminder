@@ -11,7 +11,7 @@
 import Foundation
 
 // MARK: - Version Info
-let appVersion = "1.0.0"
+let appVersion = "1.0.1"
 let appName = "DDMmacOSUpdateReminder"
 
 // MARK: - Main Entry Point
@@ -23,6 +23,7 @@ func main() {
     var runSetup = false
     var testMode = false
     var debugMode = false
+    var syncCheckMode = false
 
     var i = 1
     while i < arguments.count {
@@ -54,6 +55,9 @@ func main() {
 
         case "--debug":
             debugMode = true
+
+        case "--sync-check":
+            syncCheckMode = true
 
         default:
             Logger.shared.error("Unknown argument: \(arg)")
@@ -90,7 +94,8 @@ func main() {
         preferenceDomain: domain,
         setupMode: runSetup,
         testMode: testMode,
-        debugMode: debugMode
+        debugMode: debugMode,
+        syncCheckMode: syncCheckMode
     )
 
     let exitCode = app.run()
@@ -108,7 +113,8 @@ func printUsage() {
                           (e.g., com.yourorg.ddmmacosupdatereminder)
 
     Options:
-      --setup              Create/update LaunchDaemon and exit
+      --setup              Create/update LaunchDaemons and exit
+      --sync-check         Check if LaunchDaemon schedule needs updating
       --test               Run in test mode (show dialog regardless of DDM state)
       --debug              Skip root check (for Xcode testing only)
       --version, -v        Print version and exit
@@ -117,6 +123,7 @@ func printUsage() {
     Examples:
       \(appName) --domain com.yourorg.ddmmacosupdatereminder
       \(appName) --domain com.yourorg.ddmmacosupdatereminder --setup
+      \(appName) --domain com.yourorg.ddmmacosupdatereminder --sync-check
       \(appName) --domain com.yourorg.ddmmacosupdatereminder --test
     """)
 }
@@ -128,15 +135,17 @@ class DDMUpdateReminderApp {
     let setupMode: Bool
     let testMode: Bool
     let debugMode: Bool
+    let syncCheckMode: Bool
 
     private var configuration: Configuration?
     private var healthReporter: HealthReporter?
 
-    init(preferenceDomain: String, setupMode: Bool, testMode: Bool, debugMode: Bool) {
+    init(preferenceDomain: String, setupMode: Bool, testMode: Bool, debugMode: Bool, syncCheckMode: Bool) {
         self.preferenceDomain = preferenceDomain
         self.setupMode = setupMode
         self.testMode = testMode
         self.debugMode = debugMode
+        self.syncCheckMode = syncCheckMode
     }
 
     func run() -> Int32 {
@@ -163,9 +172,14 @@ class DDMUpdateReminderApp {
             return 1
         }
 
-        // Setup mode - create/update LaunchDaemon and exit
+        // Setup mode - create/update LaunchDaemons and exit
         if setupMode {
             return performSetup()
+        }
+
+        // Sync check mode - check if schedule needs updating and exit
+        if syncCheckMode {
+            return performSyncCheck()
         }
 
         // Normal operation
@@ -300,12 +314,45 @@ class DDMUpdateReminderApp {
 
         do {
             try launchDaemonManager.createOrUpdateLaunchDaemon()
-            Logger.shared.info("LaunchDaemon created/updated successfully")
+            try launchDaemonManager.createOrUpdateWatcherDaemon()
+            Logger.shared.info("LaunchDaemons created/updated successfully")
             return 0
         } catch {
             Logger.shared.error("Failed to create LaunchDaemon: \(error.localizedDescription)")
             return 1
         }
+    }
+
+    // MARK: - Sync Check Mode
+
+    private func performSyncCheck() -> Int32 {
+        Logger.shared.info("Running sync check mode")
+
+        guard let config = configuration else {
+            Logger.shared.error("Configuration not loaded")
+            return 1
+        }
+
+        let launchDaemonManager = LaunchDaemonManager(
+            preferenceDomain: preferenceDomain,
+            configuration: config
+        )
+
+        // Check if schedule needs updating
+        if launchDaemonManager.needsScheduleSync() {
+            Logger.shared.info("Schedule mismatch detected - updating LaunchDaemon")
+            do {
+                try launchDaemonManager.createOrUpdateLaunchDaemon()
+                Logger.shared.info("LaunchDaemon schedule synced successfully")
+            } catch {
+                Logger.shared.error("Failed to sync LaunchDaemon: \(error.localizedDescription)")
+                return 1
+            }
+        } else {
+            Logger.shared.info("Schedule is current - no update needed")
+        }
+
+        return 0
     }
 
     // MARK: - Reminder Flow
