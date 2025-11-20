@@ -8,7 +8,10 @@ Common issues and solutions for DDM macOS Update Reminder.
 
 ```bash
 # Check if binary exists
-ls -la /Library/Management/com.yourorg/ddm-update-reminder
+ls -la /usr/local/bin/DDMmacOSUpdateReminder
+
+# Check version
+/usr/local/bin/DDMmacOSUpdateReminder --version
 
 # Check LaunchDaemon
 launchctl list | grep ddmupdatereminder
@@ -30,7 +33,7 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
 
 1. **No DDM enforcement detected**
    ```bash
-   grep EnforcedInstallDate /var/log/install.log
+   grep -i "software update" /var/log/install.log | tail -20
    ```
    - Ensure DDM OS update is configured in your MDM
    - Check that machine is in scope for DDM
@@ -86,7 +89,7 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
 
 2. Verify plist exists:
    ```bash
-   ls -la /Library/LaunchDaemons/ | grep ddmupdatereminder
+   ls -la /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
    ```
 
 3. Check plist syntax:
@@ -94,12 +97,17 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
    plutil -lint /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
    ```
 
-4. Manually load:
+4. Run setup to create LaunchDaemon:
+   ```bash
+   sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
+   ```
+
+5. Manually load:
    ```bash
    sudo launchctl bootstrap system /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
    ```
 
-5. Check for errors:
+6. Check for errors:
    ```bash
    log show --predicate 'process == "launchd" AND eventMessage CONTAINS "ddmupdatereminder"' --last 1h
    ```
@@ -115,17 +123,16 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
    /usr/local/bin/dialog --version
    ```
 
-2. Verify minimum version:
-   ```bash
-   # Compare with SwiftDialogMinVersion in config
-   ```
+2. Verify minimum version (should be 2.4.0+)
 
 3. Test swiftDialog directly:
    ```bash
    /usr/local/bin/dialog --title "Test" --message "Hello" --button1text "OK"
    ```
 
-4. Reinstall swiftDialog:
+4. If auto-install is enabled, check logs for download errors
+
+5. Reinstall swiftDialog:
    ```bash
    # Download from https://github.com/swiftDialog/swiftDialog/releases
    ```
@@ -138,12 +145,12 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
 
 1. Check deferral file:
    ```bash
-   /usr/libexec/PlistBuddy -c "Print" /Library/Management/com.yourorg/ddm-deferral.plist
+   /usr/libexec/PlistBuddy -c "Print" "/Library/Application Support/com.macjediwizard.ddmupdatereminder/deferral.plist"
    ```
 
 2. Check permissions:
    ```bash
-   ls -la /Library/Management/com.yourorg/
+   ls -la "/Library/Application Support/com.macjediwizard.ddmupdatereminder/"
    ```
 
 3. Verify deadline hasn't changed:
@@ -180,15 +187,12 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
 
 1. Check install.log parsing:
    ```bash
-   grep EnforcedInstallDate /var/log/install.log | tail -n 1
+   grep -i "software update" /var/log/install.log | tail -20
    ```
 
-2. Check for past-due deadline handling:
-   ```bash
-   grep setPastDuePaddedEnforcementDate /var/log/install.log | tail -n 1
-   ```
+2. Verify machine received updated DDM policy
 
-3. Verify machine received updated DDM policy
+3. Check for multiple enforcement entries
 
 ### Issue: Health State Not Updating
 
@@ -200,12 +204,12 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last
 
 2. Check health file permissions:
    ```bash
-   ls -la /Library/Management/com.yourorg/ddm-health.plist
+   ls -la "/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
    ```
 
 3. Read health file:
    ```bash
-   /usr/libexec/PlistBuddy -c "Print" /Library/Management/com.yourorg/ddm-health.plist
+   /usr/libexec/PlistBuddy -c "Print" "/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
    ```
 
 4. Trigger inventory update in Jamf
@@ -235,13 +239,13 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder" AND cat
 ### Reset Deferrals
 
 ```bash
-sudo rm /Library/Management/com.yourorg/ddm-deferral.plist
+sudo rm "/Library/Application Support/com.macjediwizard.ddmupdatereminder/deferral.plist"
 ```
 
 ### Reset Health State
 
 ```bash
-sudo rm /Library/Management/com.yourorg/ddm-health.plist
+sudo rm "/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
 ```
 
 ### Complete Reset
@@ -251,7 +255,7 @@ sudo rm /Library/Management/com.yourorg/ddm-health.plist
 sudo launchctl bootout system /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
 
 # Remove all state files
-sudo rm -f /Library/Management/com.yourorg/ddm-*.plist
+sudo rm -rf "/Library/Application Support/com.macjediwizard.ddmupdatereminder"
 
 # Reload daemon
 sudo launchctl bootstrap system /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
@@ -262,17 +266,15 @@ sudo launchctl bootstrap system /Library/LaunchDaemons/com.macjediwizard.ddmupda
 Enable test mode for debugging:
 
 1. Set in configuration profile:
-   ```json
-   {
-     "TestMode": true,
-     "TestDaysRemaining": 5,
-     "VerboseLogging": true
-   }
+   ```
+   AdvancedSettings > TestMode: true
+   AdvancedSettings > TestDaysRemaining: 5
+   AdvancedSettings > VerboseLogging: true
    ```
 
 2. Run manually:
    ```bash
-   sudo /Library/Management/com.yourorg/ddm-update-reminder --domain com.macjediwizard.ddmupdatereminder
+   sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --test
    ```
 
 3. Stream logs in another terminal:
@@ -284,7 +286,7 @@ Enable test mode for debugging:
 
 If issues persist:
 
-1. Collect logs using the script in Logging-Reference.md
+1. Collect logs using the predicates above
 2. Note macOS version and hardware
 3. Include configuration profile settings (sanitized)
 4. Open issue on [GitHub](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/issues)

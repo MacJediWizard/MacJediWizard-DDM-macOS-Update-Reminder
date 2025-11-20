@@ -22,20 +22,20 @@ While Apple's Declarative Device Management (DDM) provides Mac Admins a powerful
 
 ```
 Jamf Configuration Profile (Managed Preferences):
-└── {PreferenceDomain}    # All configuration settings
+└── com.macjediwizard.ddmupdatereminder    # All configuration settings
 
 /usr/local/bin/
-└── DDMmacOSUpdateReminder                # Signed binary
+└── DDMmacOSUpdateReminder                 # Signed binary
 
-/Library/Application Support/{PreferenceDomain}/
-├── deferral.plist                        # Deferral state tracking
-└── health.plist                          # Health state for EAs
+/Library/Application Support/com.macjediwizard.ddmupdatereminder/
+├── deferral.plist                         # Deferral state tracking
+└── health.plist                           # Health state for EAs
 
 /Library/LaunchDaemons/
-└── {PreferenceDomain}.plist              # Self-managed by binary
+└── com.macjediwizard.ddmupdatereminder.plist  # Created by --setup
 ```
 
-> **Note**: All configuration is stored in managed preferences via your Jamf Configuration Profile. The binary reads settings using the `--domain` argument, enabling multi-entity support.
+> **Note**: All configuration is stored in managed preferences via your Jamf Configuration Profile. The binary reads settings using the `--domain` argument. After installing the package, run `--setup` to create the LaunchDaemon.
 
 ## Requirements
 

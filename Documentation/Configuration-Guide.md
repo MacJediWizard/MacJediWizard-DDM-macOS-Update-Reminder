@@ -8,14 +8,18 @@ All configuration is managed through Jamf Configuration Profiles using managed p
 
 ## Setting Up the Configuration Profile
 
-### 1. Create External Application in Jamf Pro
+### 1. Create Configuration Profile in Jamf Pro
 
-1. Go to **Settings > Computer Management > Custom Schema > External Applications**
-2. Click **Add**
-3. Set **Source** to "Custom Schema"
-4. Upload the JSON manifest from `JamfResources/ConfigurationProfile/com.macjediwizard.ddmupdatereminder.json`
-5. Configure your organization's settings
-6. Scope to your target computers
+1. Go to **Computers > Configuration Profiles**
+2. Click **New**
+3. Add payload: **Application & Custom Settings**
+4. Select **External Applications** > **Add**
+5. Choose **Custom Schema**
+6. Set **Preference Domain** to: `com.macjediwizard.ddmupdatereminder`
+7. Paste the contents of `JamfResources/ConfigurationProfile/com.macjediwizard.ddmupdatereminder.json`
+8. Click **Add**
+9. Configure your organization's settings using the Jamf Pro UI
+10. Scope to target computers
 
 ### 2. Preference Domain
 
@@ -26,7 +30,7 @@ com.macjediwizard.ddmupdatereminder
 
 If using a custom domain, pass it as an argument when running the binary:
 ```bash
-/Library/Management/com.yourorg/ddm-update-reminder --domain com.yourorg.ddmupdatereminder
+/usr/local/bin/DDMmacOSUpdateReminder --domain com.yourorg.ddmupdatereminder
 ```
 
 ## Configuration Sections

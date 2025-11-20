@@ -5,144 +5,149 @@ Step-by-step guide to deploying DDM macOS Update Reminder in your environment.
 ## Prerequisites
 
 - Jamf Pro (or compatible MDM)
-- Apple Developer ID for code signing (for custom builds)
 - macOS 12.0+ target machines
 - DDM OS update enforcement configured in your MDM
 
 ## Deployment Overview
 
 1. Deploy Configuration Profile
-2. Deploy swiftDialog (if not already deployed)
-3. Deploy binary package
+2. Deploy the installer package
+3. Run setup command to create LaunchDaemon
 4. Verify installation
-5. Monitor with Extension Attributes
+
+## File Locations
+
+After deployment, files are located at:
+
+```
+/usr/local/bin/DDMmacOSUpdateReminder              # Binary
+
+/Library/Application Support/{PreferenceDomain}/
+├── deferral.plist                                 # Deferral state
+└── health.plist                                   # Health state for EAs
+
+/Library/LaunchDaemons/{PreferenceDomain}.plist    # LaunchDaemon
+```
+
+Where `{PreferenceDomain}` is `com.macjediwizard.ddmupdatereminder` by default.
 
 ## Step 1: Deploy Configuration Profile
 
-### Create External Application
+### Option A: Using Jamf Pro Custom Schema (Recommended)
 
-1. In Jamf Pro, go to **Settings > Computer Management > Custom Schema**
-2. Click **External Applications > Add**
-3. Configure:
-   - **Source**: Custom Schema
-   - **Preference Domain**: `com.macjediwizard.ddmupdatereminder`
-4. Upload the JSON manifest from `JamfResources/ConfigurationProfile/`
+1. In Jamf Pro, go to **Computers > Configuration Profiles**
+2. Click **New**
+3. Add payload: **Application & Custom Settings**
+4. Select **External Applications** > **Add**
+5. Choose **Custom Schema**
+6. Set **Preference Domain** to: `com.macjediwizard.ddmupdatereminder`
+7. Paste the contents of `JamfResources/ConfigurationProfile/com.macjediwizard.ddmupdatereminder.json`
+8. Click **Add**
+9. Configure your settings using the Jamf Pro UI
+10. Scope to target computers
 
-### Configure Settings
+### Option B: Manual Property List
+
+Create a Configuration Profile with Application & Custom Settings using preference domain `com.macjediwizard.ddmupdatereminder` and configure the settings manually.
+
+### Minimum Required Settings
 
 At minimum, configure:
-- Organization Settings (domain name, directory)
-- Support Settings (contact information)
-- Dialog Content (customize messages)
+- **AdvancedSettings > SwiftDialogAutoInstall**: `true` (recommended)
+- **SupportSettings**: Your IT contact information
+- **DialogContent**: Customize messages as needed
 
-### Create Configuration Profile
+## Step 2: Deploy Package
 
-1. Go to **Computers > Configuration Profiles > New**
-2. Add **Application & Custom Settings > External Applications**
-3. Select your External Application
-4. Configure values using the Jamf Pro UI
-5. Scope to target computers
-
-## Step 2: swiftDialog (Auto-Install Recommended)
-
-DDMmacOSUpdateReminder uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to display notification windows to users. The binary handles this dependency automatically.
-
-### Option A: Auto-Install (Recommended)
-
-Enable auto-install in your Configuration Profile:
-```json
-{
-  "SwiftDialogAutoInstall": true,
-  "SwiftDialogMinVersion": "2.4.0"
-}
-```
-
-**Benefits:**
-- No separate package to deploy
-- Binary downloads latest compatible version on first run
-- Automatically updates if below minimum version
-- Single deployment workflow
-
-The binary downloads swiftDialog from the official GitHub release and installs it to `/usr/local/bin/dialog`.
-
-### Option B: Pre-Deploy via Jamf
-
-If you prefer to manage swiftDialog separately:
-
-1. Download latest swiftDialog from [GitHub releases](https://github.com/swiftDialog/swiftDialog/releases)
-2. Create a Jamf package
-3. Deploy before the DDM Update Reminder package
-4. Set `SwiftDialogAutoInstall` to `false` in your Configuration Profile
-
-## Step 3: Deploy Binary Package
-
-### Download Release
+### Download
 
 Download the signed and notarized package from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases):
 
-- **DDMmacOSUpdateReminder-1.0.0.pkg** - Installer package (installs to `/usr/local/bin/`)
+- **DDMmacOSUpdateReminder-1.0.0.pkg**
 
-### Deploy via Jamf Pro
+This installs the binary to `/usr/local/bin/DDMmacOSUpdateReminder`.
+
+### Create Jamf Policy
 
 1. Upload `DDMmacOSUpdateReminder-1.0.0.pkg` to Jamf Pro
 2. Create new policy
 3. Add the package
-4. Add a post-install script to run setup:
+4. **Important**: Add a post-install script (see Step 3)
+5. Set triggers: Enrollment Complete, Recurring Check-in
+6. Scope to target computers
+7. Execution frequency: Once per computer
+
+## Step 3: Run Setup Command
+
+After the package installs, run the setup command to create the LaunchDaemon.
+
+### Post-Install Script
+
+Add this script to your Jamf policy:
 
 ```bash
 #!/bin/zsh
-# Post-install: Create LaunchDaemon
+
+# DDMmacOSUpdateReminder Post-Install Setup
+# Creates LaunchDaemon for scheduled execution
 
 BINARY="/usr/local/bin/DDMmacOSUpdateReminder"
 PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
 
-# Run setup (creates LaunchDaemon)
-"${BINARY}" --domain "${PREF_DOMAIN}" --setup
+# Verify binary exists
+if [[ ! -x "$BINARY" ]]; then
+    echo "Error: Binary not found at $BINARY"
+    exit 1
+fi
+
+# Run setup to create LaunchDaemon
+"$BINARY" --domain "$PREF_DOMAIN" --setup
+
+if [[ $? -eq 0 ]]; then
+    echo "LaunchDaemon created successfully"
+else
+    echo "Error: Failed to create LaunchDaemon"
+    exit 1
+fi
 
 exit 0
 ```
 
-### Policy Configuration
+### What Setup Does
 
-1. Create new policy in Jamf Pro
-2. Add the package
-3. Add the post-install script
-4. Set trigger: Enrollment Complete, Recurring Check-in
-5. Scope to target computers
-6. Execution frequency: Once per computer
-
-### Package Contents
-
-The installer package places the binary at:
-```
-/usr/local/bin/DDMmacOSUpdateReminder
-```
-
-This location is:
-- In the default PATH for easy command-line access
-- Standard location for third-party binaries
-- Accessible by the LaunchDaemon
+The `--setup` command:
+- Creates the LaunchDaemon at `/Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist`
+- Configures run times from your Configuration Profile
+- Loads the daemon into launchd
+- The daemon will then run at scheduled times and at login
 
 ## Step 4: Verify Installation
 
 ### Check Binary
 
 ```bash
-ls -la /usr/local/bin/DDMmacOSUpdateReminder
 /usr/local/bin/DDMmacOSUpdateReminder --version
+# Should output: DDMmacOSUpdateReminder version 1.0.0
 ```
 
 ### Check LaunchDaemon
 
 ```bash
+# Verify plist exists
+ls -la /Library/LaunchDaemons/com.macjediwizard.ddmupdatereminder.plist
+
+# Verify daemon is loaded
 launchctl list | grep ddmupdatereminder
-ls -la /Library/LaunchDaemons/ | grep ddmupdatereminder
 ```
 
 ### Check Configuration Profile
 
 ```bash
+# Read all settings
 defaults read com.macjediwizard.ddmupdatereminder
+
+# Check specific setting
+defaults read com.macjediwizard.ddmupdatereminder ConfigVersion
 ```
 
 ### Test Run
@@ -158,41 +163,46 @@ sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdater
 log show --predicate 'subsystem == "com.macjediwizard.ddmupdatereminder"' --last 1h
 ```
 
-## Step 5: Set Up Extension Attributes
+## swiftDialog Dependency
 
-### Create Extension Attributes
+DDMmacOSUpdateReminder uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to display notifications.
 
-In Jamf Pro, create Extension Attributes using the scripts from `JamfResources/ExtensionAttributes/`:
+### Auto-Install (Recommended)
 
-1. **DDM Update Reminder - Health Status**
-   - Data Type: String
-   - Script: `EA-Health-Status.sh`
+Enable in your Configuration Profile:
+```
+AdvancedSettings > SwiftDialogAutoInstall: true
+AdvancedSettings > SwiftDialogMinVersion: 2.4.0
+```
 
-2. **DDM Update Reminder - Deferrals Remaining**
-   - Data Type: String
-   - Script: `EA-Deferrals-Remaining.sh`
+The binary will automatically download and install swiftDialog on first run.
 
-3. **DDM Update Reminder - Last Run Status**
-   - Data Type: String
-   - Script: `EA-Last-Run-Status.sh`
+### Manual Install
 
-4. **DDM Update Reminder - Enforcement Deadline**
-   - Data Type: String
-   - Script: `EA-Enforcement-Deadline.sh`
+If you prefer to manage swiftDialog separately:
+1. Download from [swiftDialog releases](https://github.com/swiftDialog/swiftDialog/releases)
+2. Deploy via Jamf before DDMmacOSUpdateReminder
+3. Set `SwiftDialogAutoInstall: false`
 
-### Create Smart Groups
+## Extension Attributes
 
-Create Smart Groups based on Extension Attributes:
+Create Extension Attributes in Jamf Pro for monitoring. Scripts are in `JamfResources/ExtensionAttributes/`:
 
-**Healthy Installations**:
-- DDM Update Reminder - Health Status is "Healthy"
+| Extension Attribute | Script | Data Type | Description |
+|---------------------|--------|-----------|-------------|
+| Health Status | `EA-Health-Status.sh` | String | Overall health status |
+| Deferrals Remaining | `EA-Deferrals-Remaining.sh` | String | User's remaining deferrals |
+| Last Run Status | `EA-Last-Run-Status.sh` | String | Result of last execution |
+| Enforcement Deadline | `EA-Enforcement-Deadline.sh` | String | DDM deadline date |
+| User Actions | `EA-User-Actions.sh` | String | Last user action taken |
 
-**Config Issues**:
-- DDM Update Reminder - Health Status contains "Error"
-- DDM Update Reminder - Health Status is "ConfigMissing"
+### Update Extension Attribute Paths
 
-**No Deferrals Remaining**:
-- DDM Update Reminder - Deferrals Remaining is "0"
+The Extension Attribute scripts need the correct path. Update them to use:
+
+```bash
+HEALTH_FILE="/Library/Application Support/com.macjediwizard.ddmupdatereminder/health.plist"
+```
 
 ## Updating
 
@@ -202,31 +212,61 @@ Simply update the Configuration Profile in Jamf Pro. The binary reads settings a
 
 ### Update Binary
 
-1. Update the package/script with new binary
+1. Upload new package version to Jamf Pro
 2. Deploy via policy
-3. The binary will update its LaunchDaemon if needed
+3. Run setup again if LaunchDaemon schedule changed:
+   ```bash
+   sudo /usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
+   ```
 
 ### Uninstall
 
-Create an uninstall policy with script:
+Create an uninstall policy with this script:
 
 ```bash
 #!/bin/zsh
-# Uninstall DDM macOS Update Reminder
+
+# Uninstall DDMmacOSUpdateReminder
 
 BINARY="/usr/local/bin/DDMmacOSUpdateReminder"
 PREF_DOMAIN="com.macjediwizard.ddmupdatereminder"
 SUPPORT_DIR="/Library/Application Support/${PREF_DOMAIN}"
+DAEMON_PLIST="/Library/LaunchDaemons/${PREF_DOMAIN}.plist"
 
 # Unload LaunchDaemon
-launchctl bootout system "/Library/LaunchDaemons/${PREF_DOMAIN}.plist" 2>/dev/null
+if [[ -f "$DAEMON_PLIST" ]]; then
+    launchctl bootout system "$DAEMON_PLIST" 2>/dev/null
+fi
 
 # Remove files
-rm -f "/Library/LaunchDaemons/${PREF_DOMAIN}.plist"
-rm -f "${BINARY}"
-rm -rf "${SUPPORT_DIR}"
+rm -f "$DAEMON_PLIST"
+rm -f "$BINARY"
+rm -rf "$SUPPORT_DIR"
 
+echo "DDMmacOSUpdateReminder uninstalled"
 exit 0
+```
+
+## Command-Line Reference
+
+```bash
+DDMmacOSUpdateReminder --domain <preference.domain> [options]
+
+Required:
+  --domain <domain>    Preference domain for managed preferences
+                       (e.g., com.macjediwizard.ddmupdatereminder)
+
+Options:
+  --setup              Create/update LaunchDaemon and exit
+  --test               Run in test mode (show dialog regardless of DDM state)
+  --debug              Skip root check (for Xcode testing only)
+  --version, -v        Print version and exit
+  --help, -h           Print this help message
+
+Examples:
+  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder
+  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
+  DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --test
 ```
 
 ## Troubleshooting
@@ -257,25 +297,25 @@ exit 0
 
 ### Dialog Not Appearing
 
-1. Check for display assertions:
+1. Check DDM enforcement exists:
    ```bash
-   pmset -g assertions
+   grep -i "software update" /var/log/install.log | tail -20
    ```
 
-2. Check DDM enforcement exists:
-   ```bash
-   grep EnforcedInstallDate /var/log/install.log
-   ```
-
-3. Verify swiftDialog:
+2. Verify swiftDialog:
    ```bash
    /usr/local/bin/dialog --version
    ```
 
+3. Check for display assertions (meetings):
+   ```bash
+   pmset -g assertions
+   ```
+
 ## Security Considerations
 
-- Binary must be signed with Developer ID
-- Binary must be notarized
+- Binary is signed with Developer ID Application
+- Binary is notarized by Apple
+- Requires root privileges for normal operation
 - Use HTTPS for icon URLs
-- Sanitize sensitive data in logs
-- Restrict management directory permissions
+- State files are stored in protected directories
