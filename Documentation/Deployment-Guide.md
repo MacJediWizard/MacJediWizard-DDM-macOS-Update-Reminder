@@ -43,26 +43,36 @@ At minimum, configure:
 4. Configure values using the Jamf Pro UI
 5. Scope to target computers
 
-## Step 2: Deploy swiftDialog
+## Step 2: swiftDialog (Auto-Install Recommended)
 
-If swiftDialog is not already deployed, you have two options:
+DDMmacOSUpdateReminder uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to display notification windows to users. The binary handles this dependency automatically.
 
-### Option A: Let Binary Auto-Install
+### Option A: Auto-Install (Recommended)
 
-Set in your configuration profile:
+Enable auto-install in your Configuration Profile:
 ```json
 {
-  "SwiftDialogAutoInstall": true
+  "SwiftDialogAutoInstall": true,
+  "SwiftDialogMinVersion": "2.4.0"
 }
 ```
 
-The binary will download and install swiftDialog from the official GitHub release.
+**Benefits:**
+- No separate package to deploy
+- Binary downloads latest compatible version on first run
+- Automatically updates if below minimum version
+- Single deployment workflow
 
-### Option B: Deploy via Jamf
+The binary downloads swiftDialog from the official GitHub release and installs it to `/usr/local/bin/dialog`.
+
+### Option B: Pre-Deploy via Jamf
+
+If you prefer to manage swiftDialog separately:
 
 1. Download latest swiftDialog from [GitHub releases](https://github.com/swiftDialog/swiftDialog/releases)
 2. Create a Jamf package
-3. Deploy before the DDM Update Reminder binary
+3. Deploy before the DDM Update Reminder package
+4. Set `SwiftDialogAutoInstall` to `false` in your Configuration Profile
 
 ## Step 3: Deploy Binary Package
 

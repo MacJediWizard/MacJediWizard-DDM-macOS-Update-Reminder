@@ -40,9 +40,15 @@ Jamf Configuration Profile (Managed Preferences):
 ## Requirements
 
 - macOS 12.0 (Monterey) or later
-- [swiftDialog](https://github.com/swiftDialog/swiftDialog) 2.4.0 or later
 - Jamf Pro (or compatible MDM for managed preferences)
 - Apple Silicon or Intel Mac
+
+### swiftDialog Dependency
+
+This tool uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to display notification windows. You have two options:
+
+1. **Auto-Install (Recommended)**: Enable `SwiftDialogAutoInstall` in your Configuration Profile and the binary will automatically download and install swiftDialog on first run
+2. **Pre-Deploy**: Deploy swiftDialog 2.4.0+ separately via Jamf before deploying this tool
 
 ## Installation
 
