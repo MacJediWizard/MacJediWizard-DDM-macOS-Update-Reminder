@@ -39,7 +39,7 @@ Jamf Configuration Profile (Managed Preferences):
 
 ## Requirements
 
-- macOS 13.0 (Ventura) or later
+- macOS 12.0 (Monterey) or later
 - [swiftDialog](https://github.com/swiftDialog/swiftDialog) 2.4.0 or later
 - Jamf Pro (or compatible MDM for managed preferences)
 - Apple Silicon or Intel Mac
@@ -52,16 +52,26 @@ Upload the JSON manifest to Jamf Pro as an External Application and configure yo
 
 See [JamfResources/ConfigurationProfile/](JamfResources/ConfigurationProfile/) for the manifest.
 
-### 2. Deploy Binary
+### 2. Deploy Package
 
-Download the signed/notarized binary from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases) and deploy via Jamf package or script.
+Download the signed and notarized installer package from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases):
+
+- **DDMmacOSUpdateReminder-1.0.0.pkg** - Installs binary to `/usr/local/bin/`
+
+Deploy via Jamf Pro with a post-install script to run setup:
+
+```bash
+/usr/local/bin/DDMmacOSUpdateReminder --domain com.macjediwizard.ddmupdatereminder --setup
+```
 
 ### 3. Initial Run
 
 The binary will:
 - Read configuration from managed preferences
-- Create its LaunchDaemon
+- Create its LaunchDaemon at `/Library/LaunchDaemons/`
 - Begin monitoring for DDM enforcement deadlines
+
+See the [Deployment Guide](Documentation/Deployment-Guide.md) for complete instructions.
 
 ## Configuration
 
@@ -124,9 +134,27 @@ See [Documentation/Logging-Reference.md](Documentation/Logging-Reference.md) for
 Requires Xcode 15+ and macOS 14+.
 
 ```bash
+# Using Xcode project
+xcodebuild -project DDMmacOSUpdateReminder.xcodeproj \
+  -scheme DDMmacOSUpdateReminder \
+  -configuration Release \
+  build
+
+# Or using Swift Package Manager
 cd DDMNotifier
-xcodebuild -scheme DDMNotifier -configuration Release
+swift build -c release
 ```
+
+### Testing in Xcode
+
+The Xcode project includes a debug mode for testing without root privileges:
+
+1. Open `DDMmacOSUpdateReminder.xcodeproj` in Xcode
+2. The scheme is pre-configured with `--domain`, `--test`, and `--debug` arguments
+3. Install test configuration: copy `DDMNotifier/Resources/TestConfiguration.plist` to `~/Library/Preferences/com.macjediwizard.ddmupdatereminder.plist`
+4. Build and run (⌘R)
+
+The `--debug` flag skips root check, health reporting, and meeting detection for development testing.
 
 ### Contributing
 

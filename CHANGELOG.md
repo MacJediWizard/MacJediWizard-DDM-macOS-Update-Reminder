@@ -7,25 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Initial project structure
-- Configuration profile JSON schema for Jamf
-- Extension Attributes for health monitoring
-- Documentation framework
-
 ### Planned
-- Swift binary implementation
-- LaunchDaemon self-management
-- Deferral tracking system
-- swiftDialog integration
-- Unified logging support
+- Additional customization options
+- Extended localization support
 
-## [0.1.0] - TBD
+## [1.0.0] - 2025-11-19
 
 ### Added
-- Initial release
-- Core binary functionality
-- Configuration profile support
-- Basic deferral system
-- Health reporting
+- Complete Swift binary implementation
+- DDM enforcement detection and parsing
+- SwiftDialog-based notification dialogs with customizable branding
+- Configurable deferral system with threshold-based behavior
+- Snooze functionality separate from deferrals
+- Meeting/presentation detection (respects user assertions)
+- Self-managing LaunchDaemon creation and updates
+- Comprehensive health reporting for Jamf Extension Attributes
+- macOS Unified Logging integration
+- Test mode for development and validation
+- Debug mode for Xcode testing without root privileges
+- Configuration Profile JSON schema for Jamf Pro
+- Extension Attributes for monitoring:
+  - Health Status
+  - Deferrals Remaining
+  - Last Run Status
+  - Enforcement Deadline
+  - User Actions
+- Message template variables for dynamic content
+- Support for custom icons, overlay images, and branding
+- Automatic swiftDialog installation option
+- Multi-entity support via preference domain argument
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
+### Requirements
+- macOS 12.0 (Monterey) or later
+- swiftDialog 2.4.0 or later
+- Jamf Pro (or compatible MDM)
 
