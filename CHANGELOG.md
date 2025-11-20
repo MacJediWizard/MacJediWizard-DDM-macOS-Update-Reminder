@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional customization options
 - Extended localization support
 
+## [1.0.6] - 2025-11-20
+
+### Added
+- **Dynamic ManagementDirectory**: Extension Attributes now automatically read ManagementDirectory from Configuration Profile
+
+### Changed
+- Documentation updated with correct ManagementDirectory default and file location details
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
 ## [1.0.5] - 2025-11-20
 
 ### Added
