@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ConfigVersion</key>
+	<string>1.0.0-test</string>
+	<key>OrganizationSettings</key>
+	<dict>
+		<key>ReverseDomainName</key>
+		<string>com.macjediwizard</string>
+		<key>OrganizationName</key>
+		<string>MacJediWizard Test</string>
+	</dict>
+	<key>BehaviorSettings</key>
+	<dict>
+		<key>DaysBeforeDeadlineDisplayReminder</key>
+		<integer>14</integer>
+		<key>DaysBeforeDeadlineBlurscreen</key>
+		<integer>3</integer>
+		<key>MeetingDelayMinutes</key>
+		<integer>75</integer>
+		<key>MeetingCheckIntervalSeconds</key>
+		<integer>300</integer>
+		<key>IgnoreAssertionsWithinHours</key>
+		<integer>24</integer>
+		<key>RandomDelayMaxSeconds</key>
+		<integer>0</integer>
+	</dict>
+	<key>DeferralSettings</key>
+	<dict>
+		<key>MaxDeferrals</key>
+		<integer>10</integer>
+		<key>ResetOnNewDeadline</key>
+		<true/>
+		<key>SnoozeEnabled</key>
+		<true/>
+		<key>SnoozeMinutes</key>
+		<integer>120</integer>
+		<key>ExhaustedBehavior</key>
+		<string>NoRemindButton</string>
+	</dict>
+	<key>ScheduleSettings</key>
+	<dict>
+		<key>RunAtLoad</key>
+		<true/>
+		<key>LoginDelaySeconds</key>
+		<integer>0</integer>
+	</dict>
+	<key>BrandingSettings</key>
+	<dict>
+		<key>IconSize</key>
+		<integer>250</integer>
+		<key>WindowWidth</key>
+		<integer>800</integer>
+		<key>WindowHeight</key>
+		<integer>600</integer>
+		<key>WindowPosition</key>
+		<string>center</string>
+		<key>MessageFontSize</key>
+		<integer>14</integer>
+	</dict>
+	<key>SupportSettings</key>
+	<dict>
+		<key>TeamName</key>
+		<string>IT Support (Test)</string>
+		<key>Phone</key>
+		<string>555-1234</string>
+		<key>Email</key>
+		<string>support@test.com</string>
+		<key>Website</key>
+		<string>https://support.test.com</string>
+	</dict>
+	<key>DialogContent</key>
+	<dict>
+		<key>TitleUpdate</key>
+		<string>macOS Update Required (TEST)</string>
+		<key>TitleUpgrade</key>
+		<string>macOS Upgrade Required (TEST)</string>
+		<key>Button1Text</key>
+		<string>Open Software Update</string>
+		<key>Button2Text</key>
+		<string>Remind Me Later</string>
+		<key>InfoButtonText</key>
+		<string>Help</string>
+	</dict>
+	<key>HealthSettings</key>
+	<dict>
+		<key>EnableHealthReporting</key>
+		<true/>
+		<key>MaxErrorLogEntries</key>
+		<integer>50</integer>
+	</dict>
+	<key>AdvancedSettings</key>
+	<dict>
+		<key>SwiftDialogMinVersion</key>
+		<string>2.4.0</string>
+		<key>SwiftDialogAutoInstall</key>
+		<true/>
+		<key>VerboseLogging</key>
+		<false/>
+		<key>TestMode</key>
+		<true/>
+		<key>TestDaysRemaining</key>
+		<integer>5</integer>
+	</dict>
+</dict>
+</plist>

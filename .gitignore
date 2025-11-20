@@ -18,3 +18,8 @@ xcuserdata/
 *.app
 *.ipa
 build/
+
+# Build artifacts
+build/
+.build/
+DerivedData/

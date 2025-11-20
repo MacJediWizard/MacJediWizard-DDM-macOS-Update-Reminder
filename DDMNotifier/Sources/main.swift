@@ -22,6 +22,7 @@ func main() {
     var preferenceDomain: String?
     var runSetup = false
     var testMode = false
+    var debugMode = false
 
     var i = 1
     while i < arguments.count {
@@ -50,6 +51,9 @@ func main() {
 
         case "--test":
             testMode = true
+
+        case "--debug":
+            debugMode = true
 
         default:
             Logger.shared.error("Unknown argument: \(arg)")
@@ -85,7 +89,8 @@ func main() {
     let app = DDMUpdateReminderApp(
         preferenceDomain: domain,
         setupMode: runSetup,
-        testMode: testMode
+        testMode: testMode,
+        debugMode: debugMode
     )
 
     let exitCode = app.run()
@@ -105,6 +110,7 @@ func printUsage() {
     Options:
       --setup              Create/update LaunchDaemon and exit
       --test               Run in test mode (show dialog regardless of DDM state)
+      --debug              Skip root check (for Xcode testing only)
       --version, -v        Print version and exit
       --help, -h           Print this help message
 
@@ -121,14 +127,16 @@ class DDMUpdateReminderApp {
     let preferenceDomain: String
     let setupMode: Bool
     let testMode: Bool
+    let debugMode: Bool
 
     private var configuration: Configuration?
     private var healthReporter: HealthReporter?
 
-    init(preferenceDomain: String, setupMode: Bool, testMode: Bool) {
+    init(preferenceDomain: String, setupMode: Bool, testMode: Bool, debugMode: Bool) {
         self.preferenceDomain = preferenceDomain
         self.setupMode = setupMode
         self.testMode = testMode
+        self.debugMode = debugMode
     }
 
     func run() -> Int32 {
@@ -141,11 +149,14 @@ class DDMUpdateReminderApp {
         let configLoaded = loadConfiguration()
 
         // Initialize health reporter (after config attempt, so we can report config errors)
-        if let config = configuration {
+        // Skip in debug mode - can't write to /Library without root
+        if let config = configuration, !debugMode {
             healthReporter = HealthReporter(
                 preferenceDomain: preferenceDomain,
                 configuration: config
             )
+        } else if debugMode {
+            Logger.shared.preflight("Debug mode: skipping health reporter initialization")
         }
 
         guard configLoaded else {
@@ -166,12 +177,16 @@ class DDMUpdateReminderApp {
     private func performPreflightChecks() -> Bool {
         Logger.shared.preflight("Running preflight checks")
 
-        // Check running as root
-        guard getuid() == 0 else {
-            Logger.shared.error("Must be run as root")
-            return false
+        // Check running as root (skip in debug mode)
+        if debugMode {
+            Logger.shared.preflight("Debug mode: skipping root check")
+        } else {
+            guard getuid() == 0 else {
+                Logger.shared.error("Must be run as root")
+                return false
+            }
+            Logger.shared.preflight("Running as root: OK")
         }
-        Logger.shared.preflight("Running as root: OK")
 
         // Check for logged-in user
         let loggedInUser = getLoggedInUser()
@@ -212,6 +227,12 @@ class DDMUpdateReminderApp {
 
     /// Writes configuration errors directly to health file (before healthReporter is available)
     private func writeConfigErrorToHealth(status: String, error: String) {
+        // Skip in debug mode - can't write to /Library without root
+        if debugMode {
+            Logger.shared.preflight("Debug mode: skipping health file write")
+            return
+        }
+
         let directory = "/Library/Application Support/\(preferenceDomain)"
         let healthPath = "\(directory)/health.plist"
         let fileManager = FileManager.default
@@ -297,11 +318,34 @@ class DDMUpdateReminderApp {
             return 1
         }
 
+        // Check if test mode is enabled (command-line or config)
+        let isTestMode = testMode || config.advancedSettings.testMode
+
         // Parse DDM enforcement from install.log
         let ddmParser = DDMParser()
-        guard let enforcement = ddmParser.parseEnforcement() else {
+        var enforcement = ddmParser.parseEnforcement()
+
+        // In test mode, create fake enforcement if none exists
+        if enforcement == nil && isTestMode {
+            Logger.shared.info("Test mode: creating fake DDM enforcement")
+            let testDays = config.advancedSettings.testDaysRemaining
+            let fakeDeadline = Date().addingTimeInterval(TimeInterval(testDays * 86400))
+            enforcement = DDMEnforcement(
+                targetVersion: "15.2",
+                targetBuild: "24C101",
+                deadline: fakeDeadline,
+                deadlineFormatted: formatTestDeadline(fakeDeadline),
+                daysRemaining: testDays,
+                hoursRemaining: testDays * 24,
+                isUpgrade: false
+            )
+        }
+
+        guard let enforcement = enforcement else {
             Logger.shared.info("No DDM enforcement found - system may be up to date or not in scope")
-            healthReporter?.updateHealthState(status: .success, userAction: "No enforcement")
+            if !debugMode {
+                healthReporter?.updateHealthState(status: .success, userAction: "No enforcement")
+            }
             return 0
         }
 
@@ -309,14 +353,13 @@ class DDMUpdateReminderApp {
 
         // Check if update is required
         let installedVersion = getInstalledMacOSVersion()
-        guard enforcement.isUpdateRequired(currentVersion: installedVersion) else {
+        guard enforcement.isUpdateRequired(currentVersion: installedVersion) || isTestMode else {
             Logger.shared.info("System is up to date (\(installedVersion) >= \(enforcement.targetVersion))")
-            healthReporter?.updateHealthState(status: .success, userAction: "Up to date")
+            if !debugMode {
+                healthReporter?.updateHealthState(status: .success, userAction: "Up to date")
+            }
             return 0
         }
-
-        // Check if test mode is enabled (command-line or config)
-        let isTestMode = testMode || config.advancedSettings.testMode
 
         // Use testDaysRemaining if in config test mode, otherwise actual days
         let daysRemaining = config.advancedSettings.testMode
@@ -350,22 +393,26 @@ class DDMUpdateReminderApp {
             return 0
         }
 
-        // Check display assertions (meetings/presentations)
-        let hoursUntilDeadline = enforcement.hoursRemaining
-        if hoursUntilDeadline > config.behaviorSettings.ignoreAssertionsWithinHours {
-            let meetingWaitResult = waitForMeetingToEnd(config: config)
-            if !meetingWaitResult {
-                // Meeting still active after max wait time
-                Logger.shared.info("Meeting still active after maximum wait - exiting")
-                healthReporter?.updateHealthState(status: .success, userAction: "Meeting timeout - will retry later")
-                return 0
-            }
+        // Check display assertions (meetings/presentations) - skip in debug mode
+        if debugMode {
+            Logger.shared.info("Debug mode: skipping meeting/assertion checks")
         } else {
-            Logger.shared.info("Within \(config.behaviorSettings.ignoreAssertionsWithinHours) hours of deadline - ignoring display assertions")
-        }
+            let hoursUntilDeadline = enforcement.hoursRemaining
+            if hoursUntilDeadline > config.behaviorSettings.ignoreAssertionsWithinHours {
+                let meetingWaitResult = waitForMeetingToEnd(config: config)
+                if !meetingWaitResult {
+                    // Meeting still active after max wait time
+                    Logger.shared.info("Meeting still active after maximum wait - exiting")
+                    healthReporter?.updateHealthState(status: .success, userAction: "Meeting timeout - will retry later")
+                    return 0
+                }
+            } else {
+                Logger.shared.info("Within \(config.behaviorSettings.ignoreAssertionsWithinHours) hours of deadline - ignoring display assertions")
+            }
 
-        // Apply random delay (if at scheduled time)
-        applyRandomDelay(config: config)
+            // Apply random delay (if at scheduled time)
+            applyRandomDelay(config: config)
+        }
 
         // Show dialog
         let dialogController = DialogController(
@@ -443,6 +490,15 @@ class DDMUpdateReminderApp {
     }
 
     // MARK: - Helper Functions
+
+    private func formatTestDeadline(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, dd-MMM-yyyy, h:mm a"
+        var formatted = formatter.string(from: date)
+        formatted = formatted.replacingOccurrences(of: " AM", with: " a.m.")
+        formatted = formatted.replacingOccurrences(of: " PM", with: " p.m.")
+        return formatted
+    }
 
     private func getLoggedInUser() -> String {
         let pipe = Pipe()
