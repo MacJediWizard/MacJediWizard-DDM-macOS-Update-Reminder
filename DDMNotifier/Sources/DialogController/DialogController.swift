@@ -189,8 +189,10 @@ class DialogController {
             args += ["--button2disabled"]
         }
 
-        // Info button (for help)
-        args += ["--infobuttontext", configuration.dialogContent.infoButtonText]
+        // Info button (for help) - only set text if not empty, otherwise swiftDialog shows "?" icon
+        if !configuration.dialogContent.infoButtonText.isEmpty {
+            args += ["--infobuttontext", configuration.dialogContent.infoButtonText]
+        }
 
         // Help message
         let helpMessage = substituteVariables(in: configuration.dialogContent.helpMessageTemplate)
@@ -334,6 +336,9 @@ class DialogController {
 
         // Snooze
         result = result.replacingOccurrences(of: "{snoozeMinutes}", with: String(configuration.deferralSettings.snoozeMinutes))
+
+        // Convert literal \n to actual newlines (Jamf Pro strips newlines from text fields)
+        result = result.replacingOccurrences(of: "\\n", with: "\n")
 
         return result
     }

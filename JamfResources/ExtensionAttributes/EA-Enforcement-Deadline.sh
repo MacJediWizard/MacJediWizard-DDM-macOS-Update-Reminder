@@ -24,8 +24,8 @@ if [[ ! -f "${HEALTH_FILE}" ]]; then
 fi
 
 # Read deadline from health state
-DEADLINE=$(/usr/libexec/PlistBuddy -c "Print :CurrentEnforcementDeadline" "${HEALTH_FILE}" 2>/dev/null)
-TARGET_VERSION=$(/usr/libexec/PlistBuddy -c "Print :TargetVersion" "${HEALTH_FILE}" 2>/dev/null)
+DEADLINE=$(/usr/libexec/PlistBuddy -c "Print :currentEnforcementDeadline" "${HEALTH_FILE}" 2>/dev/null)
+TARGET_VERSION=$(/usr/libexec/PlistBuddy -c "Print :targetVersion" "${HEALTH_FILE}" 2>/dev/null)
 
 if [[ -n "${DEADLINE}" ]] && [[ "${DEADLINE}" != "None" ]]; then
     # Format date for readability

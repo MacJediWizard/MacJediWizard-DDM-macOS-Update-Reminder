@@ -124,6 +124,27 @@ Customize all dialog text using message templates with variables.
 | `InfoboxTemplate` | String | Sidebar info |
 | `HelpMessageTemplate` | String | Help popup |
 
+#### Line Breaks in Templates
+
+**Important**: Jamf Pro's Custom Schema text fields strip newline characters. Use `\n` for line breaks in your templates:
+
+```
+**Title**\n\nFirst paragraph text.\n\nSecond paragraph text.
+```
+
+The binary automatically converts `\n` to actual line breaks. This applies to:
+- `MessageTemplate`
+- `MessageTemplateExhausted`
+- `InfoboxTemplate`
+- `HelpMessageTemplate`
+
+#### Markdown Support
+
+Templates support markdown formatting:
+- `**bold**` for bold text
+- `---` for horizontal rules
+- `- item` for bullet lists
+
 ### Health Settings
 
 | Key | Type | Default | Description |

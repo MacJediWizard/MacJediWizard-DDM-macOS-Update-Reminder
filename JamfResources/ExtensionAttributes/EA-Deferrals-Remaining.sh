@@ -16,8 +16,8 @@ if [[ ! -f "${HEALTH_FILE}" ]]; then
 fi
 
 # Read deferrals remaining
-DEFERRALS=$(/usr/libexec/PlistBuddy -c "Print :DeferralsRemaining" "${HEALTH_FILE}" 2>/dev/null)
-MAX_DEFERRALS=$(/usr/libexec/PlistBuddy -c "Print :MaxDeferralsAtThreshold" "${HEALTH_FILE}" 2>/dev/null)
+DEFERRALS=$(/usr/libexec/PlistBuddy -c "Print :deferralsRemaining" "${HEALTH_FILE}" 2>/dev/null)
+MAX_DEFERRALS=$(/usr/libexec/PlistBuddy -c "Print :maxDeferralsAtThreshold" "${HEALTH_FILE}" 2>/dev/null)
 
 if [[ -n "${DEFERRALS}" ]] && [[ "${DEFERRALS}" != "-1" ]]; then
     if [[ -n "${MAX_DEFERRALS}" ]]; then

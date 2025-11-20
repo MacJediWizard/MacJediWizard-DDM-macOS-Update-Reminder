@@ -16,9 +16,9 @@ if [[ ! -f "${HEALTH_FILE}" ]]; then
 fi
 
 # Read last run info
-LAST_STATUS=$(/usr/libexec/PlistBuddy -c "Print :LastRunStatus" "${HEALTH_FILE}" 2>/dev/null)
-LAST_RUN=$(/usr/libexec/PlistBuddy -c "Print :LastRunDate" "${HEALTH_FILE}" 2>/dev/null)
-LAST_ACTION=$(/usr/libexec/PlistBuddy -c "Print :LastUserAction" "${HEALTH_FILE}" 2>/dev/null)
+LAST_STATUS=$(/usr/libexec/PlistBuddy -c "Print :lastRunStatus" "${HEALTH_FILE}" 2>/dev/null)
+LAST_RUN=$(/usr/libexec/PlistBuddy -c "Print :lastRunDate" "${HEALTH_FILE}" 2>/dev/null)
+LAST_ACTION=$(/usr/libexec/PlistBuddy -c "Print :lastUserAction" "${HEALTH_FILE}" 2>/dev/null)
 
 if [[ -n "${LAST_STATUS}" ]] && [[ -n "${LAST_RUN}" ]]; then
     # Format date for readability
