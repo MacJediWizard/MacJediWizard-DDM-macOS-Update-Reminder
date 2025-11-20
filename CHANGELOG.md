@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional customization options
 - Extended localization support
 
+## [1.0.5] - 2025-11-20
+
+### Added
+- **Snooze/Defer dropdown**: Users can now explicitly choose between Snooze (no deferral used) and Remind Me Later (uses a deferral)
+- Dropdown shows snooze duration and remaining deferrals for clarity
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
 ## [1.0.4] - 2025-11-20
 
 ### Fixed
