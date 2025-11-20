@@ -335,9 +335,6 @@ class DialogController {
         // Snooze
         result = result.replacingOccurrences(of: "{snoozeMinutes}", with: String(configuration.deferralSettings.snoozeMinutes))
 
-        // Convert literal \n to actual newlines (Jamf Pro strips newlines from text fields)
-        result = result.replacingOccurrences(of: "\\n", with: "\n")
-
         return result
     }
 
