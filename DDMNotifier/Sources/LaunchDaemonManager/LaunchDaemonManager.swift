@@ -161,7 +161,7 @@ class LaunchDaemonManager {
             process.waitUntilExit()
             Logger.shared.launchDaemon("Unloaded existing LaunchDaemon")
         } catch {
-            // May fail if not loaded, that's OK
+            Logger.shared.verbose("LaunchDaemon unload failed (may not be loaded): \(error.localizedDescription)")
         }
     }
 
@@ -181,6 +181,7 @@ class LaunchDaemonManager {
             let output = String(data: data, encoding: .utf8) ?? ""
             return output.contains(preferenceDomain)
         } catch {
+            Logger.shared.verbose("Failed to check daemon status: \(error.localizedDescription)")
             return false
         }
     }
@@ -294,7 +295,7 @@ class LaunchDaemonManager {
             process.waitUntilExit()
             Logger.shared.launchDaemon("Unloaded existing watcher LaunchDaemon")
         } catch {
-            // May fail if not loaded, that's OK
+            Logger.shared.verbose("Watcher LaunchDaemon unload failed (may not be loaded): \(error.localizedDescription)")
         }
     }
 

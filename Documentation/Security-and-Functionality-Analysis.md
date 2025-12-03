@@ -1,7 +1,7 @@
 # DDM macOS Update Reminder - Security and Functionality Analysis Report
 
 **Analysis Date:** 2025-12-03
-**Analyzed Version:** 1.1.1
+**Analyzed Version:** 1.2.0
 **Analyst:** Automated Code Review
 
 ---

@@ -380,7 +380,7 @@ log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder"' -
 # Specific categories
 log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "preflight"' --last 1h
 log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "config"' --last 1h
-log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "ddmParser"' --last 1h
+log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "ddmParsing"' --last 1h
 log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "dialog"' --last 1h
 log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "userAction"' --last 1h
 log show --predicate 'subsystem == "com.macjediwizard.ddmmacosupdatereminder" AND category == "health"' --last 1h

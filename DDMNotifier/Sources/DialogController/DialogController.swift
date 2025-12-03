@@ -639,6 +639,11 @@ class DialogController {
               (scheme == "http" || scheme == "https") else {
             return false
         }
+        // Ensure URL has a valid hostname
+        guard let host = url.host, !host.isEmpty else {
+            Logger.shared.warning("URL rejected: missing or empty hostname - \(urlString)")
+            return false
+        }
         // Check for shell metacharacters that could be dangerous
         let dangerousChars = CharacterSet(charactersIn: ";|&`$(){}[]<>\\'\"\n\r")
         return urlString.rangeOfCharacter(from: dangerousChars) == nil

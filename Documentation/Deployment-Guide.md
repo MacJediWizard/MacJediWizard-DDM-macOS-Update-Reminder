@@ -133,7 +133,7 @@ This self-healing design means you only need to run `--setup` once during initia
 
 ```bash
 /usr/local/bin/DDMmacOSUpdateReminder --version
-# Should output: DDMmacOSUpdateReminder version 1.0.1
+# Should output: DDMmacOSUpdateReminder version 1.2.0
 ```
 
 ### Check LaunchDaemons

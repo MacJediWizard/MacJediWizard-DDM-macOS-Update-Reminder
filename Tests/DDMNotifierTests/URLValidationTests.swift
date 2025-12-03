@@ -92,12 +92,10 @@ final class URLValidationTests: XCTestCase {
         }
     }
 
-    func testURLsWithoutHostAreAccepted() {
-        // Swift's URL parser accepts these as valid URLs
-        // Our security focus is on scheme and shell metacharacters, not URL completeness
-        // These are technically valid http/https URLs per Swift's parser
-        XCTAssertTrue(isValidURL("https://"), "Swift accepts https:// as valid URL struct")
-        XCTAssertTrue(isValidURL("https:///path/only"), "Swift accepts https:/// as valid URL struct")
+    func testURLsWithoutHostAreRejected() {
+        // URLs without valid hostnames should be rejected for security
+        XCTAssertFalse(isValidURL("https://"), "URLs without hostname should be rejected")
+        XCTAssertFalse(isValidURL("https:///path/only"), "URLs without hostname should be rejected")
     }
 
     // MARK: - Edge Cases
@@ -123,6 +121,11 @@ final class URLValidationTests: XCTestCase {
         guard let url = URL(string: urlString),
               let scheme = url.scheme?.lowercased(),
               (scheme == "http" || scheme == "https") else {
+            return false
+        }
+
+        // Ensure URL has a valid hostname
+        guard let host = url.host, !host.isEmpty else {
             return false
         }
 

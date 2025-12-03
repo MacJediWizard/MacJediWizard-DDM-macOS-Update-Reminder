@@ -598,6 +598,7 @@ class DDMUpdateReminderApp {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         } catch {
+            Logger.shared.verbose("Failed to get logged-in user: \(error.localizedDescription)")
             return ""
         }
     }
@@ -615,6 +616,7 @@ class DDMUpdateReminderApp {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         } catch {
+            Logger.shared.verbose("Failed to get macOS version: \(error.localizedDescription)")
             return ""
         }
     }
@@ -642,6 +644,7 @@ class DDMUpdateReminderApp {
             }
             return false
         } catch {
+            Logger.shared.verbose("Failed to check display assertions: \(error.localizedDescription)")
             return false
         }
     }

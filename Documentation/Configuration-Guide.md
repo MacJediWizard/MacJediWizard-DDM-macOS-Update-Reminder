@@ -156,7 +156,7 @@ Templates support markdown formatting:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `EnableHealthReporting` | Boolean | `true` | Write health state |
-| `HealthStatePath` | String | `ddm-health.plist` | Health file name |
+| `HealthStatePath` | String | `health.plist` | Health file name |
 | `MaxErrorLogEntries` | Integer | `50` | Max errors to keep |
 
 ### Advanced Settings

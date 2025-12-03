@@ -20,15 +20,7 @@ HEALTH_FILE="${MGMT_DIR}/${PREF_DOMAIN}/health.plist"
 
 # Check if health file exists
 if [[ ! -f "${HEALTH_FILE}" ]]; then
-    # Try to read directly from install.log as fallback
-    ddmLogEntry=$(grep "EnforcedInstallDate" /var/log/install.log 2>/dev/null | tail -n 1)
-    if [[ -n "${ddmLogEntry}" ]]; then
-        DEADLINE="${${ddmLogEntry##*|EnforcedInstallDate:}%%|*}"
-        DEADLINE_FORMATTED=$(date -jf "%Y-%m-%dT%H:%M:%S" "${DEADLINE%%Z}" "+%Y-%m-%d %H:%M" 2>/dev/null || echo "${DEADLINE}")
-        echo "<result>${DEADLINE_FORMATTED}</result>"
-    else
-        echo "<result>None</result>"
-    fi
+    echo "<result>None</result>"
     exit 0
 fi
 

@@ -6,7 +6,7 @@ DDM macOS Update Reminder uses macOS Unified Logging for all output. This guide 
 
 **Subsystem**: `com.macjediwizard.ddmmacosupdatereminder`
 
-> **Note**: The log subsystem includes "macos" in the name, while the preference domain does not. See issue #36.
+> **Note**: Both the log subsystem and preference domain use `com.macjediwizard.ddmmacosupdatereminder`. This was unified in v1.1.0 (issue #36 resolved).
 
 **Categories**:
 - `preflight` - Startup and validation checks
