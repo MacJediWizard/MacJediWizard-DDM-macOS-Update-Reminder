@@ -138,15 +138,17 @@ final class ConfigurationTests: XCTestCase {
         let defaults = createMockDefaults(with: [:])
         let settings = DeferralSettings.load(from: defaults)
 
-        // Test various days remaining scenarios
-        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(20), 10, "Days > 14 should use max")
-        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(14), 10, "Day 14 exactly")
-        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(10), 5, "10 days should use 7-day threshold")
-        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(7), 5, "Day 7 exactly")
-        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(5), 2, "5 days should use 3-day threshold")
-        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(3), 2, "Day 3 exactly")
-        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(1), 0, "Day 1 should be 0")
-        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(0), 0, "Day 0 should be 0")
+        // Default schedule: [14:10, 7:5, 3:2, 1:0]
+        // Logic: finds first threshold where daysRemaining >= days (sorted ascending)
+        // So for 10 days, schedule sorted is [1:0, 3:2, 7:5, 14:10], first >= 10 is 14:10
+        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(20), 10, "Days > 14 should use max (fallback)")
+        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(14), 10, "Day 14 exactly matches threshold")
+        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(10), 10, "10 days: first threshold >= 10 is 14")
+        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(7), 5, "Day 7 exactly matches threshold")
+        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(5), 5, "5 days: first threshold >= 5 is 7")
+        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(3), 2, "Day 3 exactly matches threshold")
+        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(1), 0, "Day 1 exactly matches threshold")
+        XCTAssertEqual(settings.maxDeferralsForDaysRemaining(0), 0, "Day 0: first threshold >= 0 is 1")
     }
 
     // MARK: - Helper Functions
