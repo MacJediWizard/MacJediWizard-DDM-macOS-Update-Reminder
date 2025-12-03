@@ -208,9 +208,19 @@ class DialogController {
                 args += ["--button2actioncolor", branding.button2Color]
             }
         } else {
-            // Show disabled button with exhausted text
-            args += ["--button2text", configuration.dialogContent.button2TextExhausted]
-            args += ["--button2disabled"]
+            // Deferrals exhausted
+            if configuration.deferralSettings.exhaustedBehavior == "AutoOpenUpdate" {
+                // AutoOpenUpdate: Show countdown timer, then auto-click button1
+                let delaySeconds = configuration.deferralSettings.autoOpenDelaySeconds
+                Logger.shared.dialog("AutoOpenUpdate: Dialog will auto-proceed in \(delaySeconds) seconds")
+                args += ["--timer", String(delaySeconds)]
+                args += ["--button1text", "\(configuration.dialogContent.button1Text) (auto in {timer}s)"]
+                // No button2 at all in AutoOpenUpdate mode
+            } else {
+                // NoRemindButton: Show disabled button with exhausted text
+                args += ["--button2text", configuration.dialogContent.button2TextExhausted]
+                args += ["--button2disabled"]
+            }
         }
 
         // Enable JSON output to capture dropdown selection
@@ -316,6 +326,7 @@ class DialogController {
 
         // Version info
         result = result.replacingOccurrences(of: "{installedVersion}", with: getInstalledVersion())
+        result = result.replacingOccurrences(of: "{installedBuild}", with: getInstalledBuild())
         result = result.replacingOccurrences(of: "{targetVersion}", with: enforcement.targetVersion)
         result = result.replacingOccurrences(of: "{targetBuild}", with: enforcement.targetBuild)
 
@@ -332,6 +343,13 @@ class DialogController {
         result = result.replacingOccurrences(of: "{deadlineFormatted}", with: enforcement.deadlineFormatted)
         result = result.replacingOccurrences(of: "{daysRemaining}", with: String(daysRemaining))
         result = result.replacingOccurrences(of: "{hoursRemaining}", with: String(enforcement.hoursRemaining))
+
+        // Separate deadline date and time
+        let deadlineDateFormatter = DateFormatter()
+        deadlineDateFormatter.dateFormat = "yyyy-MM-dd"
+        result = result.replacingOccurrences(of: "{deadlineDate}", with: deadlineDateFormatter.string(from: enforcement.deadline))
+        deadlineDateFormatter.dateFormat = "HH:mm"
+        result = result.replacingOccurrences(of: "{deadlineTime}", with: deadlineDateFormatter.string(from: enforcement.deadline))
 
         // Deferrals
         result = result.replacingOccurrences(of: "{deferralsRemaining}", with: String(deferralsRemaining))
@@ -373,6 +391,14 @@ class DialogController {
     // MARK: - Result Interpretation
 
     private func interpretResult(exitCode: Int, output: String) -> DialogResult {
+        // Check if deferrals are exhausted for AutoOpenUpdate behavior
+        let daysRemaining = configuration.advancedSettings.testMode
+            ? configuration.advancedSettings.testDaysRemaining
+            : enforcement.daysRemaining
+        let deferralsRemaining = deferralManager.deferralsRemaining(forDaysRemaining: daysRemaining)
+        let isExhausted = deferralsRemaining <= 0
+        let isAutoOpen = isExhausted && configuration.deferralSettings.exhaustedBehavior == "AutoOpenUpdate"
+
         switch exitCode {
         case 0:
             return .openSoftwareUpdate
@@ -395,6 +421,12 @@ class DialogController {
         case 3:
             return .info
         case 4:
+            // Timer expired
+            if isAutoOpen {
+                // AutoOpenUpdate: timer expiry means auto-open Software Update
+                Logger.shared.dialog("AutoOpenUpdate: Timer expired, opening Software Update")
+                return .openSoftwareUpdate
+            }
             return .timeout
         case 20:
             Logger.shared.dialog("User has Do Not Disturb enabled")
@@ -405,6 +437,44 @@ class DialogController {
     }
 
     // MARK: - Icon Management
+
+    /// Downloads a file with retry logic and exponential backoff
+    private func downloadWithRetry(url: String, destination: String, maxAttempts: Int = 3) -> Bool {
+        for attempt in 1...maxAttempts {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
+            process.arguments = [
+                "-L", "-s",
+                "-o", destination,
+                "--connect-timeout", "10",
+                "--max-time", "30",
+                url
+            ]
+
+            do {
+                try process.run()
+                process.waitUntilExit()
+
+                if process.terminationStatus == 0 {
+                    Logger.shared.verbose("Download succeeded on attempt \(attempt): \(url)", category: .dialog)
+                    return true
+                }
+
+                Logger.shared.verbose("Download attempt \(attempt)/\(maxAttempts) failed for: \(url)", category: .dialog)
+            } catch {
+                Logger.shared.verbose("Download attempt \(attempt)/\(maxAttempts) error: \(error.localizedDescription)", category: .dialog)
+            }
+
+            // Exponential backoff: 1s, 2s, 4s
+            if attempt < maxAttempts {
+                let delay = pow(2.0, Double(attempt - 1))
+                Thread.sleep(forTimeInterval: delay)
+            }
+        }
+
+        Logger.shared.warning("Download failed after \(maxAttempts) attempts: \(url)")
+        return false
+    }
 
     private func downloadIcon() -> String? {
         let majorVersion = String(enforcement.targetVersion.split(separator: ".").first ?? "")
@@ -419,18 +489,7 @@ class DialogController {
         }
 
         let tempPath = "/var/tmp/ddm-icon.png"
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-L", "-s", "-o", tempPath, "--max-time", "30", iconURL]
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0 ? tempPath : nil
-        } catch {
-            return nil
-        }
+        return downloadWithRetry(url: iconURL, destination: tempPath) ? tempPath : nil
     }
 
     private func getOverlayIcon() -> String? {
@@ -454,18 +513,7 @@ class DialogController {
         }
 
         let tempPath = "/var/tmp/ddm-overlay.png"
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-L", "-s", "-o", tempPath, "--max-time", "30", overlayURL]
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0 ? tempPath : "/System/Library/CoreServices/Finder.app"
-        } catch {
-            return "/System/Library/CoreServices/Finder.app"
-        }
+        return downloadWithRetry(url: overlayURL, destination: tempPath) ? tempPath : "/System/Library/CoreServices/Finder.app"
     }
 
     private func getBannerImage() -> String? {
@@ -489,18 +537,7 @@ class DialogController {
         }
 
         let tempPath = "/var/tmp/ddm-banner.png"
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-        process.arguments = ["-L", "-s", "-o", tempPath, "--max-time", "30", bannerURL]
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0 ? tempPath : nil
-        } catch {
-            return nil
-        }
+        return downloadWithRetry(url: bannerURL, destination: tempPath) ? tempPath : nil
     }
 
     // MARK: - System Info Helpers
@@ -540,6 +577,10 @@ class DialogController {
 
     private func getInstalledVersion() -> String {
         return runCommand("/usr/bin/sw_vers", arguments: ["-productVersion"])
+    }
+
+    private func getInstalledBuild() -> String {
+        return runCommand("/usr/bin/sw_vers", arguments: ["-buildVersion"])
     }
 
     private func getSwiftDialogVersion() -> String {
@@ -605,19 +646,93 @@ class DialogController {
 
     // MARK: - swiftDialog Installation
 
+    /// State file for rate-limiting installation attempts
+    private var installStateFile: String {
+        let baseDir = "\(configuration.organizationSettings.managementDirectory)/\(configuration.organizationSettings.reverseDomainName)"
+        return "\(baseDir)/dialog-install-state.plist"
+    }
+
+    /// Check if we should attempt installation (rate limiting)
+    private func shouldAttemptInstall() -> Bool {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: installStateFile) else {
+            return true  // No state file, allow attempt
+        }
+
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: installStateFile))
+            if let plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+               let lastAttempt = plist["lastAttemptDate"] as? Date,
+               let failures = plist["consecutiveFailures"] as? Int {
+                // Exponential backoff: 15min, 1hr, 4hr, 24hr
+                let backoffMinutes: [Int] = [15, 60, 240, 1440]
+                let backoffIndex = min(failures, backoffMinutes.count - 1)
+                let waitMinutes = backoffMinutes[max(0, backoffIndex)]
+                let nextAllowed = lastAttempt.addingTimeInterval(Double(waitMinutes * 60))
+
+                if Date() < nextAllowed {
+                    Logger.shared.dialog("Installation rate-limited: \(failures) failures, retry after \(nextAllowed)")
+                    return false
+                }
+            }
+        } catch {
+            Logger.shared.verbose("Could not read install state: \(error.localizedDescription)", category: .dialog)
+        }
+        return true
+    }
+
+    /// Record installation attempt result
+    private func recordInstallAttempt(success: Bool) {
+        let fileManager = FileManager.default
+        let directory = (installStateFile as NSString).deletingLastPathComponent
+
+        // Read existing state
+        var failures = 0
+        if fileManager.fileExists(atPath: installStateFile),
+           let data = try? Data(contentsOf: URL(fileURLWithPath: installStateFile)),
+           let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] {
+            failures = plist["consecutiveFailures"] as? Int ?? 0
+        }
+
+        // Update state
+        let state: [String: Any] = [
+            "lastAttemptDate": Date(),
+            "consecutiveFailures": success ? 0 : failures + 1,
+            "lastResult": success ? "success" : "failure"
+        ]
+
+        // Create directory if needed
+        if !fileManager.fileExists(atPath: directory) {
+            try? fileManager.createDirectory(atPath: directory, withIntermediateDirectories: true)
+        }
+
+        // Write state
+        if let data = try? PropertyListSerialization.data(fromPropertyList: state, format: .xml, options: 0) {
+            try? data.write(to: URL(fileURLWithPath: installStateFile))
+        }
+    }
+
     private func installSwiftDialog() -> Bool {
         Logger.shared.dialog("Attempting to install swiftDialog")
+
+        // Check rate limiting
+        guard shouldAttemptInstall() else {
+            Logger.shared.dialog("Skipping installation due to rate limiting")
+            return false
+        }
 
         // Get latest release URL
         let apiURL = "https://api.github.com/repos/swiftDialog/swiftDialog/releases/latest"
         guard let pkgURL = getSwiftDialogPkgURL(from: apiURL) else {
             Logger.shared.error("Failed to get swiftDialog download URL")
+            recordInstallAttempt(success: false)
             return false
         }
 
         // Validate the download URL
         guard isValidURL(pkgURL) else {
             Logger.shared.error("Invalid swiftDialog download URL: \(pkgURL)")
+            recordInstallAttempt(success: false)
             return false
         }
 
@@ -633,6 +748,7 @@ class DialogController {
 
             guard downloadProcess.terminationStatus == 0 else {
                 Logger.shared.error("Failed to download swiftDialog")
+                recordInstallAttempt(success: false)
                 return false
             }
 
@@ -640,6 +756,7 @@ class DialogController {
             let expectedTeamID = "PWA5E9TQ59"
             guard verifyTeamID(tempPkg, expected: expectedTeamID) else {
                 Logger.shared.error("swiftDialog Team ID verification failed")
+                recordInstallAttempt(success: false)
                 return false
             }
 
@@ -655,12 +772,14 @@ class DialogController {
             try? FileManager.default.removeItem(atPath: tempPkg)
 
             let success = installProcess.terminationStatus == 0
+            recordInstallAttempt(success: success)
             if success {
                 Logger.shared.dialog("swiftDialog installed successfully")
             }
             return success
         } catch {
             Logger.shared.error("Error installing swiftDialog: \(error.localizedDescription)")
+            recordInstallAttempt(success: false)
             return false
         }
     }
@@ -702,6 +821,42 @@ class DialogController {
             return output.contains(expected)
         } catch {
             Logger.shared.error("Failed to verify Team ID: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Verifies SHA-256 checksum of a file (defense in depth alongside Team ID verification)
+    private func verifyChecksum(_ filePath: String, expected: String) -> Bool {
+        guard !expected.isEmpty else {
+            Logger.shared.verbose("No checksum provided, skipping verification", category: .dialog)
+            return true
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/shasum")
+        process.arguments = ["-a", "256", filePath]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            // shasum output format: "checksum  filename"
+            let computed = output.split(separator: " ").first ?? ""
+
+            let matches = computed.lowercased() == expected.lowercased()
+            if !matches {
+                Logger.shared.error("Checksum mismatch: expected \(expected), got \(computed)")
+            } else {
+                Logger.shared.verbose("Checksum verified: \(expected)", category: .dialog)
+            }
+            return matches
+        } catch {
+            Logger.shared.error("Failed to compute checksum: \(error.localizedDescription)")
             return false
         }
     }

@@ -18,8 +18,15 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PRODUCT_NAME="DDMmacOSUpdateReminder"
-VERSION="1.0.0"
 IDENTIFIER="com.macjediwizard.ddmmacosupdatereminder"
+
+# Extract version from main.swift (single source of truth)
+VERSION=$(grep 'let appVersion' "$PROJECT_ROOT/DDMNotifier/Sources/main.swift" | sed 's/.*"\(.*\)".*/\1/')
+if [[ -z "$VERSION" ]]; then
+    echo "ERROR: Could not extract version from main.swift"
+    exit 1
+fi
+echo "Detected version: $VERSION"
 
 # Configuration
 NOTARYTOOL_PROFILE="${NOTARYTOOL_PROFILE:-notarytool-profile}"

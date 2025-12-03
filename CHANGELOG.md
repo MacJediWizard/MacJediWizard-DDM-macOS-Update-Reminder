@@ -11,6 +11,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional customization options
 - Extended localization support
 
+## [1.2.0] - 2025-12-03
+
+### Added
+- **Input validation bounds checking** - All integer configuration values are now validated against documented min/max ranges (issue #39)
+- **VerboseLogging implementation** - The `VerboseLogging` configuration option now enables detailed debug logging (issue #46)
+- **AutoOpenUpdate behavior** - New `ExhaustedBehavior: AutoOpenUpdate` option shows countdown timer and auto-opens Software Update when deferrals exhausted (issue #50)
+- **Missing template variables** - Added `{installedBuild}`, `{deadlineDate}`, and `{deadlineTime}` variables (issue #52)
+- **Version mismatch detection** - Binary now logs warning when configuration version differs significantly from expected schema version (issue #43)
+- **SECURITY.md** - New comprehensive security documentation covering privilege model, input validation, and code signing (issue #45)
+- **Checksum verification helper** - Added SHA-256 checksum verification function for defense-in-depth (issue #41)
+- **Rate limiting for swiftDialog install** - Exponential backoff (15min, 1hr, 4hr, 24hr) prevents repeated installation failures (issue #40)
+- **Curl retry logic** - All icon/banner downloads now retry up to 3 times with exponential backoff (issue #44)
+- **Structured error codes** - New `ErrorCode` enum with numeric codes for programmatic monitoring and alerting (issue #42)
+- **Unit tests** - Added test suite for Configuration, DDMParser, and URL validation (issue #47)
+
+### Fixed
+- **create-pkg.sh version sync** - Package version now extracted from main.swift instead of hardcoded (issue #49)
+- **HealthStatePath configuration** - The `HealthStatePath` setting is now properly used (was hardcoded before) (issue #51)
+- **README version reference** - Documentation now references latest release generically (issue #48)
+- **JSON schema HealthStatePath default** - Changed from `ddm-health.plist` to `health.plist` to match code
+
+### Changed
+- Version bumped to 1.2.0
+- JSON schema version updated to 1.2.0
+- Health state now includes `lastErrorCode`, `lastErrorCategory`, `binaryVersion`, and `structuredErrorLog` fields
+- Logger now has `verboseMode` property and `verbose()` method
+
+### Security
+- URL validation blocks shell metacharacters to prevent command injection
+- Configuration values clamped to safe ranges
+- Team ID verification for swiftDialog downloads
+- All security measures documented in SECURITY.md
+
+### Package
+- Signed with Developer ID Application: William Grzybowski (96KRXXRRDF)
+- Notarized by Apple
+- Installs to `/usr/local/bin/DDMmacOSUpdateReminder`
+
 ## [1.1.1] - 2025-11-20
 
 ### Fixed

@@ -17,6 +17,22 @@ enum ConfigurationError: Error {
     case invalidValue(key: String, expected: String)
 }
 
+// MARK: - Configuration Validation Helpers
+
+/// Clamps an integer value to a specified range, logging if adjustment was needed
+private func clampedInt(_ value: Int?, default defaultValue: Int, min: Int, max: Int, key: String) -> Int {
+    let val = value ?? defaultValue
+    if val < min {
+        Logger.shared.warning("Configuration '\(key)' value \(val) below minimum \(min), using \(min)")
+        return min
+    }
+    if val > max {
+        Logger.shared.warning("Configuration '\(key)' value \(val) above maximum \(max), using \(max)")
+        return max
+    }
+    return val
+}
+
 // MARK: - Main Configuration
 
 struct Configuration {
@@ -86,12 +102,36 @@ struct BehaviorSettings {
         let dict = defaults?.dictionary(forKey: "BehaviorSettings") ?? [:]
 
         return BehaviorSettings(
-            daysBeforeDeadlineDisplayReminder: dict["DaysBeforeDeadlineDisplayReminder"] as? Int ?? 14,
-            daysBeforeDeadlineBlurscreen: dict["DaysBeforeDeadlineBlurscreen"] as? Int ?? 3,
-            meetingDelayMinutes: dict["MeetingDelayMinutes"] as? Int ?? 75,
-            meetingCheckIntervalSeconds: dict["MeetingCheckIntervalSeconds"] as? Int ?? 300,
-            ignoreAssertionsWithinHours: dict["IgnoreAssertionsWithinHours"] as? Int ?? 24,
-            randomDelayMaxSeconds: dict["RandomDelayMaxSeconds"] as? Int ?? 1200
+            daysBeforeDeadlineDisplayReminder: clampedInt(
+                dict["DaysBeforeDeadlineDisplayReminder"] as? Int,
+                default: 14, min: 1, max: 30,
+                key: "DaysBeforeDeadlineDisplayReminder"
+            ),
+            daysBeforeDeadlineBlurscreen: clampedInt(
+                dict["DaysBeforeDeadlineBlurscreen"] as? Int,
+                default: 3, min: 0, max: 14,
+                key: "DaysBeforeDeadlineBlurscreen"
+            ),
+            meetingDelayMinutes: clampedInt(
+                dict["MeetingDelayMinutes"] as? Int,
+                default: 75, min: 0, max: 240,
+                key: "MeetingDelayMinutes"
+            ),
+            meetingCheckIntervalSeconds: clampedInt(
+                dict["MeetingCheckIntervalSeconds"] as? Int,
+                default: 300, min: 60, max: 600,
+                key: "MeetingCheckIntervalSeconds"
+            ),
+            ignoreAssertionsWithinHours: clampedInt(
+                dict["IgnoreAssertionsWithinHours"] as? Int,
+                default: 24, min: 0, max: 72,
+                key: "IgnoreAssertionsWithinHours"
+            ),
+            randomDelayMaxSeconds: clampedInt(
+                dict["RandomDelayMaxSeconds"] as? Int,
+                default: 1200, min: 0, max: 3600,
+                key: "RandomDelayMaxSeconds"
+            )
         )
     }
 }
@@ -136,14 +176,34 @@ struct DeferralSettings {
             ]
         }
 
+        // Validate exhaustedBehavior
+        let behavior = dict["ExhaustedBehavior"] as? String ?? "NoRemindButton"
+        let validBehaviors = ["NoRemindButton", "AutoOpenUpdate"]
+        let validatedBehavior = validBehaviors.contains(behavior) ? behavior : "NoRemindButton"
+        if behavior != validatedBehavior {
+            Logger.shared.warning("Configuration 'ExhaustedBehavior' invalid value '\(behavior)', using 'NoRemindButton'")
+        }
+
         return DeferralSettings(
-            maxDeferrals: dict["MaxDeferrals"] as? Int ?? 10,
+            maxDeferrals: clampedInt(
+                dict["MaxDeferrals"] as? Int,
+                default: 10, min: 0, max: 50,
+                key: "MaxDeferrals"
+            ),
             deferralSchedule: schedule,
             resetOnNewDeadline: dict["ResetOnNewDeadline"] as? Bool ?? true,
             snoozeEnabled: dict["SnoozeEnabled"] as? Bool ?? true,
-            snoozeMinutes: dict["SnoozeMinutes"] as? Int ?? 120,
-            exhaustedBehavior: dict["ExhaustedBehavior"] as? String ?? "NoRemindButton",
-            autoOpenDelaySeconds: dict["AutoOpenDelaySeconds"] as? Int ?? 60
+            snoozeMinutes: clampedInt(
+                dict["SnoozeMinutes"] as? Int,
+                default: 120, min: 15, max: 480,
+                key: "SnoozeMinutes"
+            ),
+            exhaustedBehavior: validatedBehavior,
+            autoOpenDelaySeconds: clampedInt(
+                dict["AutoOpenDelaySeconds"] as? Int,
+                default: 60, min: 10, max: 300,
+                key: "AutoOpenDelaySeconds"
+            )
         )
     }
 
@@ -174,13 +234,19 @@ struct ScheduleSettings {
     static func load(from defaults: UserDefaults?) -> ScheduleSettings {
         let dict = defaults?.dictionary(forKey: "ScheduleSettings") ?? [:]
 
-        // Parse launch daemon times
+        // Parse launch daemon times with validation
         var times: [LaunchDaemonTime] = []
         if let timesArray = dict["LaunchDaemonTimes"] as? [[String: Any]] {
             for entry in timesArray {
                 if let hour = entry["Hour"] as? Int,
                    let minute = entry["Minute"] as? Int {
-                    times.append(LaunchDaemonTime(hour: hour, minute: minute))
+                    // Clamp hours and minutes to valid ranges
+                    let validHour = min(max(hour, 0), 23)
+                    let validMinute = min(max(minute, 0), 59)
+                    if hour != validHour || minute != validMinute {
+                        Logger.shared.warning("Configuration 'LaunchDaemonTimes' adjusted invalid time \(hour):\(minute) to \(validHour):\(validMinute)")
+                    }
+                    times.append(LaunchDaemonTime(hour: validHour, minute: validMinute))
                 }
             }
         }
@@ -196,7 +262,11 @@ struct ScheduleSettings {
         return ScheduleSettings(
             launchDaemonTimes: times,
             runAtLoad: dict["RunAtLoad"] as? Bool ?? true,
-            loginDelaySeconds: dict["LoginDelaySeconds"] as? Int ?? 60
+            loginDelaySeconds: clampedInt(
+                dict["LoginDelaySeconds"] as? Int,
+                default: 60, min: 0, max: 300,
+                key: "LoginDelaySeconds"
+            )
         )
     }
 }
@@ -245,17 +315,37 @@ struct BrandingSettings {
             "default": "https://ics.services.jamfcloud.com/icon/hash_4555d9dc8fecb4e2678faffa8bdcf43cba110e81950e07a4ce3695ec2d5579ee"
         ]
 
+        // Validate windowPosition
+        let position = dict["WindowPosition"] as? String ?? "center"
+        let validPositions = ["center", "topleft", "topright", "bottomleft", "bottomright"]
+        let validatedPosition = validPositions.contains(position) ? position : "center"
+        if position != validatedPosition {
+            Logger.shared.warning("Configuration 'WindowPosition' invalid value '\(position)', using 'center'")
+        }
+
         return BrandingSettings(
             // Icons
             overlayIconURL: dict["OverlayIconURL"] as? String ?? "",
             overlayIconPath: dict["OverlayIconPath"] as? String ?? "",
             macOSIcons: dict["MacOSIcons"] as? [String: String] ?? defaultIcons,
-            iconSize: dict["IconSize"] as? Int ?? 250,
+            iconSize: clampedInt(
+                dict["IconSize"] as? Int,
+                default: 250, min: 64, max: 500,
+                key: "IconSize"
+            ),
 
             // Window
-            windowWidth: dict["WindowWidth"] as? Int ?? 800,
-            windowHeight: dict["WindowHeight"] as? Int ?? 600,
-            windowPosition: dict["WindowPosition"] as? String ?? "center",
+            windowWidth: clampedInt(
+                dict["WindowWidth"] as? Int,
+                default: 800, min: 400, max: 1200,
+                key: "WindowWidth"
+            ),
+            windowHeight: clampedInt(
+                dict["WindowHeight"] as? Int,
+                default: 600, min: 300, max: 900,
+                key: "WindowHeight"
+            ),
+            windowPosition: validatedPosition,
             bannerImageURL: dict["BannerImageURL"] as? String ?? "",
             bannerImagePath: dict["BannerImagePath"] as? String ?? "",
             bannerTitle: dict["BannerTitle"] as? String ?? "",
@@ -268,13 +358,25 @@ struct BrandingSettings {
 
             // Fonts
             titleFontName: dict["TitleFontName"] as? String ?? "",
-            titleFontSize: dict["TitleFontSize"] as? Int ?? 0,
+            titleFontSize: clampedInt(
+                dict["TitleFontSize"] as? Int,
+                default: 0, min: 0, max: 72,
+                key: "TitleFontSize"
+            ),
             messageFontName: dict["MessageFontName"] as? String ?? "",
-            messageFontSize: dict["MessageFontSize"] as? Int ?? 14,
+            messageFontSize: clampedInt(
+                dict["MessageFontSize"] as? Int,
+                default: 14, min: 8, max: 36,
+                key: "MessageFontSize"
+            ),
 
             // Other
             progressBarColor: dict["ProgressBarColor"] as? String ?? "",
-            infoboxFontSize: dict["InfoboxFontSize"] as? Int ?? 12
+            infoboxFontSize: clampedInt(
+                dict["InfoboxFontSize"] as? Int,
+                default: 12, min: 8, max: 24,
+                key: "InfoboxFontSize"
+            )
         )
     }
 
@@ -417,7 +519,11 @@ struct HealthSettings {
         return HealthSettings(
             enableHealthReporting: dict["EnableHealthReporting"] as? Bool ?? true,
             healthStatePath: dict["HealthStatePath"] as? String ?? "health.plist",
-            maxErrorLogEntries: dict["MaxErrorLogEntries"] as? Int ?? 50
+            maxErrorLogEntries: clampedInt(
+                dict["MaxErrorLogEntries"] as? Int,
+                default: 50, min: 10, max: 200,
+                key: "MaxErrorLogEntries"
+            )
         )
     }
 }
@@ -439,7 +545,11 @@ struct AdvancedSettings {
             swiftDialogAutoInstall: dict["SwiftDialogAutoInstall"] as? Bool ?? true,
             verboseLogging: dict["VerboseLogging"] as? Bool ?? false,
             testMode: dict["TestMode"] as? Bool ?? false,
-            testDaysRemaining: dict["TestDaysRemaining"] as? Int ?? 5
+            testDaysRemaining: clampedInt(
+                dict["TestDaysRemaining"] as? Int,
+                default: 5, min: 0, max: 30,
+                key: "TestDaysRemaining"
+            )
         )
     }
 }

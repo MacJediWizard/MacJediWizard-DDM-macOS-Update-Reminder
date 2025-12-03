@@ -42,9 +42,7 @@ This tool uses [swiftDialog](https://github.com/swiftDialog/swiftDialog) to disp
 
 ### 2. Deploy Package
 
-Download from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases):
-
-- **DDMmacOSUpdateReminder-1.0.1.pkg**
+Download the latest package from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases).
 
 Upload to Jamf Pro and create a policy with a post-install script:
 

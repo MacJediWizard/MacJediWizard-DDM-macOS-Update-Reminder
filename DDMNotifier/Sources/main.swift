@@ -11,8 +11,9 @@
 import Foundation
 
 // MARK: - Version Info
-let appVersion = "1.1.1"
+let appVersion = "1.2.0"
 let appName = "DDMmacOSUpdateReminder"
+let schemaVersion = "1.2.0"  // Expected configuration schema version
 
 // MARK: - Main Entry Point
 
@@ -221,8 +222,29 @@ class DDMUpdateReminderApp {
 
         do {
             configuration = try Configuration.load(from: preferenceDomain)
+
+            // Configure logger with verbose logging setting
+            Logger.shared.configure(
+                subsystem: preferenceDomain,
+                verboseLogging: configuration!.advancedSettings.verboseLogging
+            )
+
             Logger.shared.config("Configuration loaded successfully")
             Logger.shared.config("Config version: \(configuration!.configVersion)")
+            Logger.shared.config("Binary version: \(appVersion), Schema version: \(schemaVersion)")
+
+            // Check for version mismatch (warning only, non-blocking)
+            let configMajor = configuration!.configVersion.split(separator: ".").first ?? ""
+            let schemaMajor = schemaVersion.split(separator: ".").first ?? ""
+            if configMajor != schemaMajor {
+                Logger.shared.warning("Configuration major version mismatch: config=\(configuration!.configVersion) schema=\(schemaVersion)")
+            }
+
+            // Log full configuration dump in verbose mode
+            Logger.shared.verbose("Organization: \(configuration!.organizationSettings.organizationName)", category: .config)
+            Logger.shared.verbose("ManagementDirectory: \(configuration!.organizationSettings.managementDirectory)", category: .config)
+            Logger.shared.verbose("TestMode: \(configuration!.advancedSettings.testMode)", category: .config)
+
             return true
         } catch ConfigurationError.profileNotFound {
             Logger.shared.error("Configuration profile not found for domain: \(preferenceDomain)")

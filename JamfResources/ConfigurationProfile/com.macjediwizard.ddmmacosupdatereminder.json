@@ -1,7 +1,7 @@
 {
   "title": "DDM macOS Update Reminder",
   "description": "Configuration for DDM macOS Update Reminder notifications. Deploy as External Application in Jamf Pro.",
-  "__version__": "1.1.0",
+  "__version__": "1.2.0",
   "__preferenceDomain__": "com.macjediwizard.ddmmacosupdatereminder",
 
   "properties": {
@@ -509,7 +509,7 @@
           "title": "Health State File Path",
           "description": "Filename for health state plist (in ManagementDirectory)",
           "type": "string",
-          "default": "ddm-health.plist"
+          "default": "health.plist"
         },
         "MaxErrorLogEntries": {
           "title": "Maximum Error Log Entries",

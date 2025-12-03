@@ -28,6 +28,11 @@ let package = Package(
                 "HealthReporter/HealthReporter.swift",
                 "LaunchDaemonManager/LaunchDaemonManager.swift"
             ]
+        ),
+        .testTarget(
+            name: "DDMNotifierTests",
+            dependencies: ["DDMNotifier"],
+            path: "Tests/DDMNotifierTests"
         )
     ]
 )

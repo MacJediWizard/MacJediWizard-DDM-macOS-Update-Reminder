@@ -32,14 +32,21 @@ class Logger {
     private var subsystem: String = "com.macjediwizard.ddmmacosupdatereminder"
     private var logs: [LogCategory: OSLog] = [:]
 
+    /// When verbose mode is enabled, debug messages are logged
+    var verboseMode: Bool = false
+
     private init() {
         // Initialize with default subsystem
         createLogs()
     }
 
-    func configure(subsystem: String) {
+    func configure(subsystem: String, verboseLogging: Bool = false) {
         self.subsystem = subsystem
+        self.verboseMode = verboseLogging
         createLogs()
+        if verboseLogging {
+            info("Verbose logging enabled", category: .config)
+        }
     }
 
     private func createLogs() {
@@ -85,7 +92,15 @@ class Logger {
 
     // MARK: - General Logging
 
+    /// Debug messages are only logged when verboseMode is enabled
     func debug(_ message: String, category: LogCategory = .general) {
+        guard verboseMode else { return }
+        log(message, category: category, type: .debug)
+    }
+
+    /// Verbose logging - only logs when verboseMode is enabled (alias for debug)
+    func verbose(_ message: String, category: LogCategory = .general) {
+        guard verboseMode else { return }
         log(message, category: category, type: .debug)
     }
 

@@ -62,15 +62,13 @@ At minimum, configure:
 
 ### Download
 
-Download the signed and notarized package from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases):
-
-- **DDMmacOSUpdateReminder-1.0.1.pkg**
+Download the latest signed and notarized package from [Releases](https://github.com/MacJediWizard/MacJediWizard-DDM-macOS-Update-Reminder/releases).
 
 This installs the binary to `/usr/local/bin/DDMmacOSUpdateReminder`.
 
 ### Create Jamf Policy
 
-1. Upload `DDMmacOSUpdateReminder-1.0.1.pkg` to Jamf Pro
+1. Upload the downloaded `.pkg` file to Jamf Pro
 2. Create new policy
 3. Add the package
 4. **Important**: Add a post-install script (see Step 3)
